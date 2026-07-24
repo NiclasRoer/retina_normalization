@@ -5,6 +5,11 @@ import logging
 from utility_functions.parser import parse_args
 from utility_functions.model_loader import discover_model_names, provide_model, list_all_available_models, reshape_fc_layer, retrain_model, get_model_shape
 
+from measurement_functions.gflop import measure_gflop
+logging.basicConfig(level=logging.INFO)
+lib_logger = logging.getLogger('fvcore')
+lib_logger.propagate = False
+
 def main():
     args = parse_args()
 
@@ -23,9 +28,11 @@ def main():
     for model_name in models:
         model = provide_model(model_name)
 
-        get_model_shape(model, layer_breakdown=True)
+        get_model_shape(model, layer_breakdown=False)
+        measure_gflop(model)
         reshape_fc_layer(model, freeze_backbone=True)
-        get_model_shape(model, layer_breakdown=True)
+        get_model_shape(model, layer_breakdown=False)
+
         # logging.info(f"Training {model_name}...")
         # retrain_model(model)
 
@@ -35,10 +42,9 @@ def main():
 
         with torch.no_grad():
             output = model(torch.from_numpy(img))
-            logging.info(output.shape, output.argmax(dim=1))
+            # logging.info(output.shape, output.argmax(dim=1))
         # https://docs.pytorch.org/vision/stable/models.html
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
     main()
     # list_all_available_models()

@@ -7,4 +7,5 @@ dependencies = [
     "numpy",
     "torch",
     "torchvision",
+    "fvcore",
 ]
