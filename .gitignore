@@ -1,5 +1,11 @@
 # Ignore Python virtual environment
+venv/
 .venv/
 
 # Ignore all .tar.gz archives
 *.tar.gz
+uv.lock
+*.TAG
+cifar-10-batches-py
+*.pyc
+__pycache__/
