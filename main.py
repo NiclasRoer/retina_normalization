@@ -1,14 +1,10 @@
 import torch
 import numpy as np
-import logging
 
 from utility_functions.parser import parse_args
 from utility_functions.model_loader import discover_model_names, provide_model, list_all_available_models, reshape_fc_layer, retrain_model, get_model_shape
 
 from measurement_functions.gflop import measure_gflop
-logging.basicConfig(level=logging.INFO)
-lib_logger = logging.getLogger('fvcore')
-lib_logger.propagate = False
 
 def main():
     args = parse_args()
@@ -16,9 +12,9 @@ def main():
     models = args.models if args.models else []
 
     if args.models:
-        logging.info(f"Models to benchmark: {args.models}")
+        print(f"Models to benchmark: {args.models}")
     if args.families:
-        logging.info(f"Architecture families to inspect/evaluate: {args.families}")
+        print(f"Architecture families to inspect/evaluate: {args.families}")
 
     # families = ["mobilenetv2", "mobilenetv3", "mobileone", "resnet", "regnet", "resnest", "regnest", "efficientnet", "efficientnetv2", "repvgg", "nfnet", "convnext", "convnextv2", "relknet", "hgnetv2"]
     # for family in families:
@@ -28,12 +24,11 @@ def main():
     for model_name in models:
         model = provide_model(model_name)
 
-        get_model_shape(model, layer_breakdown=False)
-        measure_gflop(model)
-        reshape_fc_layer(model, freeze_backbone=True)
-        get_model_shape(model, layer_breakdown=False)
+        # measure_gflop(model)
+        # reshape_fc_layer(model, freeze_backbone=True)
+        # get_model_shape(model, layer_breakdown=False)
 
-        # logging.info(f"Training {model_name}...")
+        # print(f"Training {model_name}...")
         # retrain_model(model)
 
         model.eval()
@@ -42,8 +37,10 @@ def main():
 
         with torch.no_grad():
             output = model(torch.from_numpy(img))
-            # logging.info(output.shape, output.argmax(dim=1))
-        # https://docs.pytorch.org/vision/stable/models.html
+            print(output.shape, output.argmax(dim=1))
+
+        # Keep the output cleanly readable
+        print()
 
 if __name__ == "__main__":
     main()

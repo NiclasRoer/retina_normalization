@@ -5,9 +5,7 @@ from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 import torchvision.models
 
-import logging
-
-from utility_functions.constants import TORCHVISION_MODEL_CATALOG
+from utility_functions.constants import TORCHVISION_MODEL_CATALOG, CATALOG
 
 def discover_model_names(family: str):
 
@@ -15,23 +13,47 @@ def discover_model_names(family: str):
     names = TORCHVISION_MODEL_CATALOG.get(family_key, [])
     return sorted(set(names))
 
-def provide_model(model_name: str, weights=None):
+def provide_model(model_name: str, weights=None, pretrained=True):
     # Best available weights (currently alias for IMAGENET1K_V2)
     # Note that these weights may change across versions
+    print(f'Modelname: {model_name}')
+    if not weights and pretrained:
+        weights = get_default_weights(model_name)
+        get_model_metadata(weights)
     model = model_builder(model_name=model_name, weights=weights)
 
     return model
 
-def model_builder(model_name, weights):
+def get_default_weights(model_name = str):
+    weights_name = None
+    for (name, weights, _) in CATALOG:
+        if name == model_name:
+            weights_name = weights
+            print(f'Found pretrained weights called: {weights_name} ...')
+
+    weights = getattr(torchvision.models, weights_name, None)
+    return weights.DEFAULT
+
+def model_builder(model_name, weights=None, pretrained=True):
+
     model_build = getattr(torchvision.models, model_name, None)
+    if weights == None and pretrained:
+        print('Weights not provided, falling back on DEFAULT pretrained weights...')
+        weights = 'DEFAULT'
+    elif weights and pretrained:
+        print(f'Model build with found weights...')
+    else:
+        print('Model build without pretrained weights...')
     model = model_build(weights=weights)
+    print('Model sucessfully build.\n')
+    get_model_shape(model, layer_breakdown=False)
     return model
 
 def list_all_available_models():
 
     all_names = [name for name in dir(torchvision.models) if not name.startswith("_") and not 'Weights' in name and not 'weights' in name]
-    logging.info(f"{len(all_names)} models available in torchvision.models")
-    logging.info(f"All available models in torchvision.models: {all_names}")
+    print(f"{len(all_names)} models available in torchvision.models")
+    print(f"All available models in torchvision.models: {all_names}")
 
 
 def _build_classifier_head(in_features: int, num_classes: int) -> nn.Module:
@@ -78,16 +100,26 @@ def reshape_fc_layer(model, num_classes=10, freeze_backbone=True):
     return model
 
 def get_model_shape(model, layer_breakdown=False):
-    logging.info(f"Model Summary:")
-    logging.info(f"  Total parameters: {sum(p.numel() for p in model.parameters())}")
-    logging.info(f"  Total trainable parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
+    print(f"Model Summary:")
+    print(f"  Total parameters: {sum(p.numel() for p in model.parameters())}")
+    print(f"  Total trainable parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
     if layer_breakdown:
         for name, layer in model.named_modules():
             if name == "":
                 continue
             if hasattr(layer, 'weight'):
-                logging.info(f"  Layer: {name}, weights shape: {layer.weight.shape}, requires_grad: {layer.weight.requires_grad}")
+                print(f"  Layer: {name}, weights shape: {layer.weight.shape}, requires_grad: {layer.weight.requires_grad}")
+
+
+def get_model_metadata(model_weights):
+    # print(model_weights.meta)
+    meta = model_weights.meta
+    metrics = meta.get("_metrics", float("nan"))
+    imagenet_metrics = metrics.get("ImageNet-1K", {})
+    acc1, acc5 = imagenet_metrics['acc@1'], imagenet_metrics['acc@5']
+    flops = meta.get("_ops", float("nan"))
+    print(f'Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}')
 
 
 def retrain_model(model: nn.Module, data_root=".", epochs=5, batch_size=32, lr: float = 3e-4, device: str | None = None,) -> nn.Module:
@@ -146,7 +178,7 @@ def retrain_model(model: nn.Module, data_root=".", epochs=5, batch_size=32, lr: 
                 total += labels.size(0)
 
         val_acc = correct / total
-        logging.info(f"Epoch {epoch+1}/{epochs} | loss={running_loss / len(train_loader):.4f} | val_acc={val_acc:.4f}")
+        print(f"Epoch {epoch+1}/{epochs} | loss={running_loss / len(train_loader):.4f} | val_acc={val_acc:.4f}")
 
         if val_acc > best_val_acc:
             best_val_acc = val_acc
