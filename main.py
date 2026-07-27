@@ -1,12 +1,24 @@
-import torch
+"""Run the benchmark entry point for the Retina normalization project."""
+
 import numpy as np
+import torch
 
+from utility_functions.model_loader import experimental_models, provide_model
 from utility_functions.parser import parse_args
-from utility_functions.model_loader import discover_model_names, provide_model, list_all_available_models, reshape_fc_layer, retrain_model, get_model_shape
 
-from measurement_functions.gflop import measure_gflop
 
-def main():
+def main() -> None:
+    """Run the benchmark workflow for the selected models.
+
+    Args:
+        None: This function reads its configuration from the command-line parser.
+
+    Returns:
+        None: The function prints benchmark results and does not return a value.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
     args = parse_args()
 
     models = args.models if args.models else []
@@ -16,20 +28,10 @@ def main():
     if args.families:
         print(f"Architecture families to inspect/evaluate: {args.families}")
 
-    # families = ["mobilenetv2", "mobilenetv3", "mobileone", "resnet", "regnet", "resnest", "regnest", "efficientnet", "efficientnetv2", "repvgg", "nfnet", "convnext", "convnextv2", "relknet", "hgnetv2"]
-    # for family in families:
-    #     print(f"Models discovered for specified family {family}:")
-    #     print(f"    {discover_model_names(family)}\n")
-
     for model_name in models:
         model = provide_model(model_name)
 
-        # measure_gflop(model)
-        # reshape_fc_layer(model, freeze_backbone=True)
-        # get_model_shape(model, layer_breakdown=False)
-
-        # print(f"Training {model_name}...")
-        # retrain_model(model)
+        experimental_models()
 
         model.eval()
 
@@ -39,9 +41,8 @@ def main():
             output = model(torch.from_numpy(img))
             print(output.shape, output.argmax(dim=1))
 
-        # Keep the output cleanly readable
         print()
+
 
 if __name__ == "__main__":
     main()
-    # list_all_available_models()

@@ -3,10 +3,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$VenvDir = if ($env:VENV_DIR) { $env:VENV_DIR } else { 'venv' }
+$VenvDir = if ($env:VENV_DIR) { $env:VENV_DIR } else { '.venv' }
 
 function Show-Usage {
-    Write-Host "Usage: . .\new_setup_venv.ps1"
+    Write-Host "Usage: . .\setup_venv.ps1"
     Write-Host "Creates and activates a Python 3.12 virtual environment in '$VenvDir'."
     Write-Host "Options:"
     Write-Host "  -Deactive   Deactivate the virtual environment."
@@ -56,7 +56,7 @@ if ($env:VIRTUAL_ENV) {
     Write-Host "Virtual environment '$VenvDir' is now active."
     python --version
     Write-Host 'Installing dependencies from pyproject.toml into the active environment...'
-    uv sync --active
+    uv sync --active --extra dev
 } else {
     throw "Virtual environment was not activated."
 }

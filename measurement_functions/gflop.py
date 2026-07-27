@@ -1,19 +1,26 @@
+"""Utilities for estimating model FLOPs."""
+
 import torch
-from torch import nn
 from fvcore.nn import FlopCountAnalysis
+from torch import nn
 
-# calflops as alternative
 
+def measure_gflop(model: nn.Module) -> None:
+    """Measure and print the GFLOPs for a model.
 
-def measure_gflop(model: nn.Module):
+    Args:
+        model: The PyTorch model to profile.
 
+    Returns:
+        None: The function prints the FLOP count and does not return a value.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
     model.eval()
 
-    # Create dummy input tensor (batch size 1, 3 channels, 224x224)
     inputs = torch.randn(1, 3, 224, 224)
 
-    # Calculate GFLOPs
-    # calflops as alternative
     flop_counter = FlopCountAnalysis(model, inputs)
     gflops = flop_counter.total() / 1e9
     print(f"Total FLOPs: {gflops:.3f} GFLOPs")

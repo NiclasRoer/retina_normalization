@@ -1,22 +1,60 @@
-import torch
+"""Utilities for discovering, constructing, and inspecting torchvision models."""
+
+import timm
 import torch.nn as nn
-import torch.optim as optim
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
 import torchvision.models
 
-from utility_functions.constants import TORCHVISION_MODEL_CATALOG, CATALOG
+from utility_functions.constants import CATALOG, TORCHVISION_MODEL_CATALOG
 
-def discover_model_names(family: str):
 
+def experimental_models() -> None:
+    """Create and inspect a sample MobileOne model.
+
+    Args:
+        None: This function does not accept parameters.
+
+    Returns:
+        None: The function prints model summary information.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
+    model = timm.create_model("mobileone_s0")
+    get_model_shape(model)
+
+
+def discover_model_names(family: str) -> list[str]:
+    """Discover model names for a given torchvision family.
+
+    Args:
+        family: The architecture family to look up, such as "mobilenetv2".
+
+    Returns:
+        list[str]: A sorted list of matching model names.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
     family_key = family.lower()
     names = TORCHVISION_MODEL_CATALOG.get(family_key, [])
     return sorted(set(names))
 
-def provide_model(model_name: str, weights=None, pretrained=True):
-    # Best available weights (currently alias for IMAGENET1K_V2)
-    # Note that these weights may change across versions
-    print(f'Modelname: {model_name}')
+
+def provide_model(model_name: str, weights=None, pretrained: bool = True):
+    """Build and return a model for the requested name.
+
+    Args:
+        model_name: The torchvision model name to load.
+        weights: Optional pretrained weights to use.
+        pretrained: Whether to use pretrained weights when available.
+
+    Returns:
+        nn.Module: The constructed PyTorch model.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
+    print(f"Modelname: {model_name}")
     if not weights and pretrained:
         weights = get_default_weights(model_name)
         get_model_metadata(weights)
@@ -24,39 +62,91 @@ def provide_model(model_name: str, weights=None, pretrained=True):
 
     return model
 
-def get_default_weights(model_name = str):
-    weights_name = None
-    for (name, weights, _) in CATALOG:
+
+def get_default_weights(model_name: str):
+    """Resolve the default pretrained weights for a model name.
+
+    Args:
+        model_name: The torchvision model name to resolve.
+
+    Returns:
+        object: The resolved pretrained weights object.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
+    weights_name: str | None = None
+    for name, weights, _ in CATALOG:
         if name == model_name:
             weights_name = weights
-            print(f'Found pretrained weights called: {weights_name} ...')
+            print(f"Found pretrained weights called: {weights_name} ...")
 
     weights = getattr(torchvision.models, weights_name, None)
     return weights.DEFAULT
 
-def model_builder(model_name, weights=None, pretrained=True):
 
+def model_builder(model_name: str, weights=None, pretrained: bool = True):
+    """Construct a model with optional pretrained weights.
+
+    Args:
+        model_name: The torchvision model name to construct.
+        weights: Optional pretrained weights to apply.
+        pretrained: Whether to use pretrained weights when available.
+
+    Returns:
+        nn.Module: The constructed PyTorch model.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
     model_build = getattr(torchvision.models, model_name, None)
-    if weights == None and pretrained:
-        print('Weights not provided, falling back on DEFAULT pretrained weights...')
-        weights = 'DEFAULT'
+    if weights is None and pretrained:
+        print("Weights not provided, falling back on DEFAULT pretrained weights...")
+        weights = "DEFAULT"
     elif weights and pretrained:
-        print(f'Model build with found weights...')
+        print("Model build with found weights...")
     else:
-        print('Model build without pretrained weights...')
+        print("Model build without pretrained weights...")
     model = model_build(weights=weights)
-    print('Model sucessfully build.\n')
+    print("Model sucessfully build.\n")
     get_model_shape(model, layer_breakdown=False)
     return model
 
-def list_all_available_models():
 
-    all_names = [name for name in dir(torchvision.models) if not name.startswith("_") and not 'Weights' in name and not 'weights' in name]
+def list_all_available_models() -> None:
+    """Print the names of all torchvision models that are discoverable.
+
+    Args:
+        None: This function does not accept parameters.
+
+    Returns:
+        None: The function prints the discovered model names.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
+    all_names = [
+        name
+        for name in dir(torchvision.models)
+        if not name.startswith("_") and "Weights" not in name and "weights" not in name
+    ]
     print(f"{len(all_names)} models available in torchvision.models")
     print(f"All available models in torchvision.models: {all_names}")
 
 
 def _build_classifier_head(in_features: int, num_classes: int) -> nn.Module:
+    """Build a small classifier head for transfer learning.
+
+    Args:
+        in_features: The number of input features for the linear layer.
+        num_classes: The number of output classes.
+
+    Returns:
+        nn.Module: A sequential classifier head.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
     return nn.Sequential(
         nn.Linear(in_features, 128),
         nn.ReLU(),
@@ -65,13 +155,25 @@ def _build_classifier_head(in_features: int, num_classes: int) -> nn.Module:
     )
 
 
-def reshape_fc_layer(model, num_classes=10, freeze_backbone=True):
+def reshape_fc_layer(model, num_classes: int = 10, freeze_backbone: bool = True):
+    """Replace the final layer of a model and optionally freeze the backbone.
 
-    if hasattr(model, 'fc'):
+    Args:
+        model: The model whose final layer should be replaced.
+        num_classes: The number of output classes for the replacement head.
+        freeze_backbone: Whether to freeze the backbone parameters.
+
+    Returns:
+        object: The modified model.
+
+    Raises:
+        ValueError: If the model does not expose a standard final layer.
+    """
+    if hasattr(model, "fc"):
         in_features = model.fc.in_features
         model.fc = _build_classifier_head(in_features, num_classes)
 
-    elif hasattr(model, 'classifier'):
+    elif hasattr(model, "classifier"):
         if isinstance(model.classifier, nn.Sequential):
             in_features = model.classifier[-1].in_features
             model.classifier[-1] = _build_classifier_head(in_features, num_classes)
@@ -86,10 +188,10 @@ def reshape_fc_layer(model, num_classes=10, freeze_backbone=True):
         for param in model.parameters():
             param.requires_grad = False
 
-        if hasattr(model, 'fc'):
+        if hasattr(model, "fc"):
             for param in model.fc.parameters():
                 param.requires_grad = True
-        elif hasattr(model, 'classifier'):
+        elif hasattr(model, "classifier"):
             if isinstance(model.classifier, nn.Sequential):
                 for param in model.classifier[-1].parameters():
                     param.requires_grad = True
@@ -99,8 +201,21 @@ def reshape_fc_layer(model, num_classes=10, freeze_backbone=True):
 
     return model
 
-def get_model_shape(model, layer_breakdown=False):
-    print(f"Model Summary:")
+
+def get_model_shape(model, layer_breakdown: bool = False) -> None:
+    """Print a summary of the model's parameter counts.
+
+    Args:
+        model: The model to summarize.
+        layer_breakdown: Whether to print per-layer weight information.
+
+    Returns:
+        None: The function prints the model summary.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
+    print("Model Summary:")
     print(f"  Total parameters: {sum(p.numel() for p in model.parameters())}")
     print(f"  Total trainable parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
@@ -108,78 +223,28 @@ def get_model_shape(model, layer_breakdown=False):
         for name, layer in model.named_modules():
             if name == "":
                 continue
-            if hasattr(layer, 'weight'):
-                print(f"  Layer: {name}, weights shape: {layer.weight.shape}, requires_grad: {layer.weight.requires_grad}")
+            if hasattr(layer, "weight"):
+                print(
+                    f"  Layer: {name}, weights shape: {layer.weight.shape}, "
+                    f"requires_grad: {layer.weight.requires_grad}"
+                )
 
 
-def get_model_metadata(model_weights):
-    # print(model_weights.meta)
+def get_model_metadata(model_weights) -> None:
+    """Print metadata information for a model weight object.
+
+    Args:
+        model_weights: The pretrained weight metadata container.
+
+    Returns:
+        None: The function prints the metadata summary.
+
+    Raises:
+        None: This function does not raise custom exceptions.
+    """
     meta = model_weights.meta
     metrics = meta.get("_metrics", float("nan"))
     imagenet_metrics = metrics.get("ImageNet-1K", {})
-    acc1, acc5 = imagenet_metrics['acc@1'], imagenet_metrics['acc@5']
+    acc1, acc5 = imagenet_metrics["acc@1"], imagenet_metrics["acc@5"]
     flops = meta.get("_ops", float("nan"))
-    print(f'Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}')
-
-
-def retrain_model(model: nn.Module, data_root=".", epochs=5, batch_size=32, lr: float = 3e-4, device: str | None = None,) -> nn.Module:
-
-    if device is None:
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    transform = transforms.Compose([
-
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomCrop(32, padding=4),
-        transforms.ToTensor(),
-        transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
-    ])
-
-    train_dataset = datasets.CIFAR10(root=data_root, train=True, download=True, transform=transform)
-    val_dataset = datasets.CIFAR10(root=data_root, train=False, download=True, transform=transform)
-
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
-    val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, num_workers=2)
-
-    model.to(device)
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
-
-    best_val_acc = 0.0
-
-    for epoch in range(epochs):
-
-        # train step
-        model.train()
-        running_loss = 0.0
-
-        for images, labels in train_loader:
-            images, labels = images.to(device), labels.to(device)
-
-            optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
-
-            running_loss += loss.item()
-
-        # validation step
-        model.eval()
-        correct = 0
-        total = 0
-
-        with torch.no_grad():
-            for images, labels in val_loader:
-                images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                preds = outputs.argmax(dim=1)
-                correct += (preds == labels).sum().item()
-                total += labels.size(0)
-
-        val_acc = correct / total
-        print(f"Epoch {epoch+1}/{epochs} | loss={running_loss / len(train_loader):.4f} | val_acc={val_acc:.4f}")
-
-        if val_acc > best_val_acc:
-            best_val_acc = val_acc
-    return model
+    print(f"Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}")

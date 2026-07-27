@@ -9,3 +9,4 @@ uv.lock
 cifar-10-batches-py
 *.pyc
 __pycache__/
+.egg-info/

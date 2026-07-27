@@ -11,7 +11,7 @@ set -euo pipefail
 VENV_DIR="${VENV_DIR:-venv}"
 
 print_usage() {
-    echo "Usage: source new_setup_venv.sh"
+    echo "Usage: source setup_venv.sh"
     echo "Creates and activates a Python 3.12 virtual environment in '$VENV_DIR'."
     echo "Options:"
     echo "  --help, -h       Show this help message."
@@ -85,7 +85,7 @@ if [ -n "${VIRTUAL_ENV:-}" ]; then
     echo "Virtual environment '$VENV_DIR' is now active."
     echo "Python: $(python --version)"
     echo "Installing dependencies from pyproject.toml into the active environment..."
-    uv sync --active
+    uv sync --active --extra dev
 else
     echo "Error: Virtual environment was not activated." >&2
     exit 1
