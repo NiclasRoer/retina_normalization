@@ -12,7 +12,7 @@ def main() -> None:
     models = args.models if args.models else None
     loaded_models = load_models(models=models, families=families)
 
-    run_experiment(models=loaded_models, output_dir='./reports', epochs=20)
+    run_experiment(models=loaded_models, output_dir='./reports', epochs=10)
 
 
 if __name__ == "__main__":

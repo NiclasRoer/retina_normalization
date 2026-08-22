@@ -31,7 +31,12 @@ def plot_report(report: dict[str, Any], output_dir: Path) -> None:
     )
     loss_axis, accuracy_axis = comparison_axes
 
-    for model_name, history in model_histories.items():
+    for model_name, model_result in model_histories.items():
+        history = (
+            model_result["history"]
+            if isinstance(model_result, dict)
+            else model_result
+        )
         epochs = [entry["epoch"] for entry in history]
         train_loss = [entry["train_loss"] for entry in history]
         test_loss = [entry["test_loss"] for entry in history]
@@ -59,6 +64,22 @@ def plot_report(report: dict[str, Any], output_dir: Path) -> None:
 
         figure.savefig(output_dir / f"{model_name}_metrics.png", dpi=150)
         plt.close(figure)
+
+        if isinstance(model_result, dict) and "confusion_matrix" in model_result:
+            confusion_figure, confusion_axis = plt.subplots(
+                figsize=(7, 6), constrained_layout=True
+            )
+            image = confusion_axis.imshow(
+                model_result["confusion_matrix"], cmap="Blues"
+            )
+            confusion_figure.colorbar(image, ax=confusion_axis)
+            confusion_axis.set_title(f"{model_name} confusion matrix")
+            confusion_axis.set_xlabel("Predicted label")
+            confusion_axis.set_ylabel("True label")
+            confusion_figure.savefig(
+                output_dir / f"{model_name}_confusion_matrix.png", dpi=150
+            )
+            plt.close(confusion_figure)
 
     loss_axis.set_title("Test loss by model")
     loss_axis.set_xlabel("Epoch")

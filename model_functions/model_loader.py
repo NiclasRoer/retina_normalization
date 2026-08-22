@@ -44,7 +44,7 @@ def discover_model_names(family: str) -> list[str]:
     return sorted(set(names))
 
 
-def provide_model(model_name: str, weights=None, pretrained: bool = True):
+def provide_model(model_name: str, weights=None, pretrained: bool = True, get_metadata: bool = False):
     """Build and return a model for the requested name.
 
     Args:
@@ -61,7 +61,8 @@ def provide_model(model_name: str, weights=None, pretrained: bool = True):
     print(f"Modelname: {model_name}")
     if not weights and pretrained:
         weights = get_default_weights(model_name)
-        get_model_metadata(weights)
+        if get_metadata:
+            get_model_metadata(weights)
     model = model_builder(model_name=model_name, weights=weights)
 
     return model

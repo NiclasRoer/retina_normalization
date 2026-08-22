@@ -123,6 +123,37 @@ def evaluate(model: nn.Module, loader: DataLoader[Any], device: torch.device) ->
     return total_loss / total, correct / total
 
 
+@torch.no_grad()
+def evaluate_confusion_matrix(
+    model: nn.Module, loader: DataLoader[Any], device: torch.device
+) -> list[list[int]]:
+    """Evaluate a model and return a true-label by predicted-label matrix."""
+    model.eval()
+    confusion_matrix: torch.Tensor | None = None
+
+    for images, labels in loader:
+        images = images.to(device)
+        labels = labels.to(device)
+        logits = model(images)
+        predictions = logits.argmax(dim=1)
+        num_classes = logits.shape[1]
+
+        if confusion_matrix is None:
+            confusion_matrix = torch.zeros(
+                (num_classes, num_classes), dtype=torch.int64, device=device
+            )
+
+        indices = labels * num_classes + predictions
+        confusion_matrix += torch.bincount(
+            indices, minlength=num_classes * num_classes
+        ).reshape(num_classes, num_classes)
+
+    if confusion_matrix is None:
+        raise ValueError("Cannot evaluate a model with an empty data loader.")
+
+    return confusion_matrix.cpu().tolist()
+
+
 # @torch.no_grad()
 # def evaluate_corrupted(
 #     model: nn.Module,
@@ -161,27 +192,42 @@ def evaluate(model: nn.Module, loader: DataLoader[Any], device: torch.device) ->
 
 
 def fit_and_evaluate(
-        model: nn.Module,
+    models: dict[str, nn.Module],
         train_loader: DataLoader[Any],
         test_loader: DataLoader[Any],
         device: torch.device,
         epochs: int=1,
-        lr: float=3e-4,
-) -> list[dict[str, float]]:
+        lr: float=1e-4,
+) -> dict[str, Any]:
     """Train model for epochs and return per-epoch train/test metrics."""
-    model = model.to(device)
-    optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    history: list[dict[str, float]] = []
-    for epoch in range(epochs):
-        train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device)
-        test_loss, test_acc = evaluate(model, test_loader, device)
-        history.append(
-            {
-                "epoch": epoch + 1,
-                "train_loss": train_loss,
-                "train_acc": train_acc,
-                "test_loss": test_loss,
-                "test_acc": test_acc,
-            }
-        )
-    return history
+    results: dict[str, dict[str, Any]] = {}
+    for name, model in models.items():
+        print(f"Training {name}...")
+        optimizer = torch.optim.Adam(model.parameters(), lr=lr)
+        history: list[dict[str, float]] = []
+        for epoch in range(epochs):
+            train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device)
+            test_loss, test_acc = evaluate(model, test_loader, device)
+            print(f"    Epoch {epoch + 1}: train_acc={train_acc:.4f} test_acc={test_acc:.4f} train_loss={train_loss:.4f} test_loss={test_loss:.4f} ")
+            history.append(
+                {
+                    "epoch": epoch + 1,
+                    "train_loss": train_loss,
+                    "train_acc": train_acc,
+                    "test_loss": test_loss,
+                    "test_acc": test_acc,
+                }
+            )
+        confusion_matrix = evaluate_confusion_matrix(model, test_loader, device)
+        print()
+        results[name] = {
+            "history": history,
+            "confusion_matrix": confusion_matrix,
+        }
+
+    summary = {
+        'device': str(device),
+        'epochs': epochs,
+        'results': results,
+    }
+    return summary

@@ -4,10 +4,8 @@ venv/
 data/
 reports/
 
+.ruff_cache/
 *.tar.gz
 uv.lock
-*.TAG
-cifar-10-batches-py
-*.pyc
 __pycache__/
 *.egg-info/
