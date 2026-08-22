@@ -1,10 +1,11 @@
 """Utilities for discovering, constructing, and inspecting torchvision models."""
 
 import timm
+import torch
 import torch.nn as nn
 import torchvision.models
 
-from utility_functions.constants import CATALOG, TORCHVISION_MODEL_CATALOG
+from model_functions.constants import CATALOG, TORCHVISION_MODEL_CATALOG
 
 
 def experimental_models() -> None:
@@ -20,7 +21,7 @@ def experimental_models() -> None:
         None: This function does not raise custom exceptions.
     """
     model = timm.create_model("mobileone_s0")
-    get_model_shape(model)
+    # get_model_shape(model)
 
 
 def discover_model_names(family: str) -> list[str]:
@@ -109,7 +110,7 @@ def model_builder(model_name: str, weights=None, pretrained: bool = True):
         print("Model build without pretrained weights...")
     model = model_build(weights=weights)
     print("Model sucessfully build.\n")
-    get_model_shape(model, layer_breakdown=False)
+    # get_model_shape(model, layer_breakdown=False)
     return model
 
 
@@ -247,4 +248,21 @@ def get_model_metadata(model_weights) -> None:
     imagenet_metrics = metrics.get("ImageNet-1K", {})
     acc1, acc5 = imagenet_metrics["acc@1"], imagenet_metrics["acc@5"]
     flops = meta.get("_ops", float("nan"))
-    print(f"Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}")
+    # print(f"Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}")
+    
+
+def load_models(models: list[str] | None = None) -> dict[str, nn.Module]:
+
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    if models:
+        print(f'Models to benchmark: {models}')
+        loaded_models = {model_name: provide_model(model_name).to(device) for model_name in models}
+    else:
+        print(f'No models provided, benchmarking falling back on baseline mobilenet_v3_small')
+        loaded_models = {
+            'mobilenet_v3_small': provide_model('mobilenet_v3_small').to(device),
+            # 'retina': RetinaBackboneMNIST(preprocess=None, input_channels=input_channels, num_classes=num_classes).to(device),
+        }
+
+    return loaded_models
