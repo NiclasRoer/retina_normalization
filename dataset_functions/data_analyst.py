@@ -1,6 +1,9 @@
+"""Helpers for inferring dataset input and label specifications."""
+
 from typing import Any
 
 from torch.utils.data import DataLoader
+
 
 def infer_input_spec(loader: DataLoader[Any]) -> tuple[int, int, int]:
     """Infer channel count and spatial dimensions from the first batch in a loader."""

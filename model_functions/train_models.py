@@ -1,5 +1,6 @@
-"""Small experiment comparing a baseline MobileNetV3Small model against a version
-with a retinal-inspired preprocessing block on MNIST.
+"""Small experiment comparing different models and their variants.
+
+The comparison uses a pretrained and a retinal-inspired preprocessing block on CIFAR10.
 
 The script is intentionally lightweight and educational. It trains for a few 
 epochs on MNIST so the comparison can be inspected quickly.
@@ -9,11 +10,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
+from tqdm import tqdm
 
 
 def adapt_model_to_data(model: nn.Module, input_channels: int, num_classes: int) -> nn.Module:
@@ -74,12 +75,13 @@ def adapt_model_to_data(model: nn.Module, input_channels: int, num_classes: int)
 
 
 def train_one_epoch(model: nn.Module, loader: DataLoader[Any], optimizer: torch.optim.Optimizer, device: torch.device) -> tuple[float, float]:
+    """Train a model for one epoch and return mean loss and accuracy."""
     model.train()
     total_loss = 0.0
     correct = 0
     total = 0
 
-    loader_loop = tqdm(loader, desc=f'ACC: 0.0', bar_format='[{elapsed}<{remaining}] {n_fmt}/{total_fmt} | {l_bar}{bar} {rate_fmt}{postfix}', colour='blue', leave=False)
+    loader_loop = tqdm(loader, desc='ACC: 0.0', bar_format='[{elapsed}<{remaining}] {n_fmt}/{total_fmt} | {l_bar}{bar} {rate_fmt}{postfix}', colour='blue', leave=False)
     for images, labels in loader_loop:
         images = images.to(device)
         labels = labels.to(device)
@@ -102,6 +104,7 @@ def train_one_epoch(model: nn.Module, loader: DataLoader[Any], optimizer: torch.
 
 @torch.no_grad()
 def evaluate(model: nn.Module, loader: DataLoader[Any], device: torch.device) -> tuple[float, float]:
+    """Evaluate a model and return mean loss and accuracy."""
     model.eval()
     total_loss = 0.0
     correct = 0

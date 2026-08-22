@@ -1,3 +1,5 @@
+"""Training and report-generation workflow for model experiments."""
+
 from __future__ import annotations
 
 import json
@@ -9,11 +11,20 @@ import torch.nn as nn
 
 from dataset_functions.data_analyst import infer_input_spec, infer_num_classes
 from dataset_functions.datasets import build_dataloaders
-from model_functions.train_models import adapt_model_to_data, train_one_epoch, evaluate
-
+from model_functions.train_models import adapt_model_to_data, evaluate, train_one_epoch
 
 
 def run_experiment(models: dict[str, nn.Module], output_dir: str | None = None, epochs: int = 1) -> dict[str, Any]:
+    """Train models, evaluate them, and optionally save a JSON report.
+
+    Args:
+        models: Models to train, keyed by their display names.
+        output_dir: Optional directory for the generated report.
+        epochs: Number of training epochs per model.
+
+    Returns:
+        A dictionary containing device, epoch count, and metric histories.
+    """
     torch.set_num_threads(1)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     train_loader, test_loader = build_dataloaders(batch_size=16)

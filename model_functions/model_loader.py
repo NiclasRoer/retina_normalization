@@ -1,11 +1,13 @@
 """Utilities for discovering, constructing, and inspecting torchvision models."""
 
-import timm
 import torch
 import torch.nn as nn
 import torchvision.models
 
-from model_functions.constants import TORCHVISION_FAMILY_CATALOG, TORCHVISION_MODEL_CATALOG
+from model_functions.constants import (
+    TORCHVISION_FAMILY_CATALOG,
+    TORCHVISION_MODEL_CATALOG,
+)
 
 
 def experimental_models() -> None:
@@ -20,7 +22,8 @@ def experimental_models() -> None:
     Raises:
         None: This function does not raise custom exceptions.
     """
-    model = timm.create_model("mobileone_s0")
+    pass
+    # model = timm.create_model("mobileone_s0")
     # get_model_shape(model)
 
 
@@ -248,11 +251,19 @@ def get_model_metadata(model_weights) -> None:
     imagenet_metrics = metrics.get("ImageNet-1K", {})
     acc1, acc5 = imagenet_metrics["acc@1"], imagenet_metrics["acc@5"]
     flops = meta.get("_ops", float("nan"))
-    # print(f"Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}")
+    print(f"Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}")
     
 
 def load_models(models: list[str] | None = None, families: list[str] | None = None) -> dict[str, nn.Module]:
+    """Load requested torchvision models on the available compute device.
 
+    Args:
+        models: Optional model names to load.
+        families: Optional catalog family names whose models should be loaded.
+
+    Returns:
+        A dictionary mapping successfully loaded model names to model instances.
+    """
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     requested_models = list(models or [])

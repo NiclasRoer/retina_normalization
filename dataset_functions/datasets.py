@@ -1,3 +1,5 @@
+"""Dataset wrappers and data loader construction helpers."""
+
 from pathlib import Path
 from typing import Any
 
@@ -6,10 +8,18 @@ import torch
 from torch.utils.data import DataLoader, Dataset, Subset
 from torchvision import datasets, transforms
 
+
 class LocalMNIST(Dataset):
     """Simple local MNIST dataset reader that uses the downloaded gzip files."""
 
     def __init__(self, data_root: Path, train: bool, transform: Any | None = None) -> None:
+        """Initialize the dataset and load the local MNIST files.
+
+        Args:
+            data_root: Directory containing the MNIST files.
+            train: Whether to load the training split.
+            transform: Optional transform applied to each image.
+        """
         self.transform = transform
         self.data_root = Path(data_root)
         self.data_root.mkdir(parents=True, exist_ok=True)
@@ -77,9 +87,11 @@ class LocalMNIST(Dataset):
         return torch.tensor(list(labels), dtype=torch.int64)
 
     def __len__(self) -> int:
+        """Return the number of images in the dataset."""
         return len(self.labels)
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return an image and label at the requested index."""
         image = self.images[idx]
         label = self.labels[idx]
         image = image.unsqueeze(0)
@@ -92,6 +104,13 @@ class LocalCIFAR10(Dataset):
     """Thin wrapper around torchvision's CIFAR-10 dataset for RGB pretrained models."""
 
     def __init__(self, data_root: Path, train: bool, transform: Any | None = None) -> None:
+        """Initialize the CIFAR-10 split and download it when necessary.
+
+        Args:
+            data_root: Directory used to store the CIFAR-10 files.
+            train: Whether to load the training split.
+            transform: Optional transform applied to each image.
+        """
         self.transform = transform
         self.data_root = Path(data_root)
         self.data_root.mkdir(parents=True, exist_ok=True)
@@ -103,9 +122,11 @@ class LocalCIFAR10(Dataset):
         )
 
     def __len__(self) -> int:
+        """Return the number of images in the dataset."""
         return len(self.dataset)
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return a channel-first image tensor and label at the index."""
         image, label = self.dataset[idx]
         image = np.asarray(image)
         image = torch.from_numpy(image).permute(2, 0, 1).to(torch.float32) / 255.0
@@ -120,6 +141,17 @@ def build_dataloaders(
         max_train_samples: int = 1024,
         max_test_samples: int = 256,
 ) -> tuple[DataLoader[Any], DataLoader[Any]]:
+    """Build training and test data loaders for CIFAR-10.
+
+    Args:
+        batch_size: Number of samples in each batch.
+        num_workers: Number of worker processes used by each loader.
+        max_train_samples: Optional cap on training samples.
+        max_test_samples: Optional cap on test samples.
+
+    Returns:
+        A training data loader and a test data loader.
+    """
     transform = transforms.Compose([
         # transforms.ToTensor(),
         transforms.Normalize(
