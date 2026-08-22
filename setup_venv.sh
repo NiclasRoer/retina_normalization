@@ -90,3 +90,5 @@ else
     echo "Error: Virtual environment was not activated." >&2
     exit 1
 fi
+
+find . -maxdepth 1 -type d -name '*.egg-info' -exec rm -rf -- {} +

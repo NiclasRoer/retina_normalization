@@ -60,3 +60,6 @@ if ($env:VIRTUAL_ENV) {
 } else {
     throw "Virtual environment was not activated."
 }
+
+Get-ChildItem -Directory -Filter '*.egg-info' |
+    Remove-Item -Recurse -Force
