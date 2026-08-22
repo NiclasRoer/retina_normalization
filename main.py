@@ -8,9 +8,9 @@ from utility_functions.parser import parse_args
 def main() -> None:
     """Run the benchmark workflow for the selected models."""
     args = parse_args()
-
+    families = args.families if args.families else None
     models = args.models if args.models else None
-    loaded_models = load_models(models=models)
+    loaded_models = load_models(models=models, families=families)
 
     run_experiment(models=loaded_models, output_dir='./reports', epochs=20)
 

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torchvision.models
 
-from model_functions.constants import CATALOG, TORCHVISION_MODEL_CATALOG
+from model_functions.constants import TORCHVISION_FAMILY_CATALOG, TORCHVISION_MODEL_CATALOG
 
 
 def experimental_models() -> None:
@@ -37,7 +37,7 @@ def discover_model_names(family: str) -> list[str]:
         None: This function does not raise custom exceptions.
     """
     family_key = family.lower()
-    names = TORCHVISION_MODEL_CATALOG.get(family_key, [])
+    names = TORCHVISION_FAMILY_CATALOG.get(family_key, [])
     return sorted(set(names))
 
 
@@ -77,7 +77,7 @@ def get_default_weights(model_name: str):
         None: This function does not raise custom exceptions.
     """
     weights_name: str | None = None
-    for name, weights, _ in CATALOG:
+    for name, weights, _ in TORCHVISION_MODEL_CATALOG:
         if name == model_name:
             weights_name = weights
             print(f"Found pretrained weights called: {weights_name} ...")
@@ -251,18 +251,28 @@ def get_model_metadata(model_weights) -> None:
     # print(f"Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}")
     
 
-def load_models(models: list[str] | None = None) -> dict[str, nn.Module]:
+def load_models(models: list[str] | None = None, families: list[str] | None = None) -> dict[str, nn.Module]:
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    if models:
-        print(f'Models to benchmark: {models}')
-        loaded_models = {model_name: provide_model(model_name).to(device) for model_name in models}
+    requested_models = list(models or [])
+
+    for family in families or []:
+        requested_models.extend(discover_model_names(family))
+
+    requested_models = list(dict.fromkeys(requested_models))
+
+    if not requested_models:
+        requested_models = ["mobilenet_v3_small"]
+        print("No models provided; using mobilenet_v3_small as the baseline.")
     else:
-        print(f'No models provided, benchmarking falling back on baseline mobilenet_v3_small')
-        loaded_models = {
-            'mobilenet_v3_small': provide_model('mobilenet_v3_small').to(device),
-            # 'retina': RetinaBackboneMNIST(preprocess=None, input_channels=input_channels, num_classes=num_classes).to(device),
-        }
+        print(f"Models to benchmark: {requested_models}")
+
+    loaded_models = {}
+    for model_name in requested_models:
+        if hasattr(torchvision.models, model_name):
+            loaded_models[model_name] = provide_model(model_name).to(device)
+        else:
+            print(f"Unknown torchvision model: '{model_name}'")
 
     return loaded_models
