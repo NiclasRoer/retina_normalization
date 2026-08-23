@@ -4,6 +4,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $VenvDir = if ($env:VENV_DIR) { $env:VENV_DIR } else { '.venv' }
+$PytorchIndex = 'https://download.pytorch.org/whl/cu128'
 
 function Show-Usage {
     Write-Host "Usage: . .\setup_venv.ps1"
@@ -57,6 +58,8 @@ if ($env:VIRTUAL_ENV) {
     python --version
     Write-Host 'Installing dependencies from pyproject.toml into the active environment...'
     uv sync --active --extra dev
+    Write-Host "Installing CUDA-enabled PyTorch from $PytorchIndex..."
+    uv pip install --reinstall 'torch==2.11.0+cu128' 'torchvision==0.26.0+cu128' --index-url $PytorchIndex --extra-index-url https://pypi.org/simple --index-strategy unsafe-best-match
 } else {
     throw "Virtual environment was not activated."
 }

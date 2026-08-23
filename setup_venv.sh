@@ -9,6 +9,7 @@
 set -euo pipefail
 
 VENV_DIR="${VENV_DIR:-venv}"
+PYTORCH_INDEX='https://download.pytorch.org/whl/cu128'
 
 print_usage() {
     echo "Usage: source setup_venv.sh"
@@ -86,6 +87,11 @@ if [ -n "${VIRTUAL_ENV:-}" ]; then
     echo "Python: $(python --version)"
     echo "Installing dependencies from pyproject.toml into the active environment..."
     uv sync --active --extra dev
+    echo "Installing CUDA-enabled PyTorch from $PYTORCH_INDEX..."
+    uv pip install --reinstall 'torch==2.11.0+cu128' 'torchvision==0.26.0+cu128' \
+        --index-url "$PYTORCH_INDEX" \
+        --extra-index-url https://pypi.org/simple \
+        --index-strategy unsafe-best-match
 else
     echo "Error: Virtual environment was not activated." >&2
     exit 1

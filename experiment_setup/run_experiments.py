@@ -29,14 +29,18 @@ def run_experiment(models: dict[str, nn.Module], output_dir: str | None = None, 
     """
     torch.set_num_threads(1)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(device)
     train_loader, test_loader = build_dataloaders(batch_size=16)
 
     input_channels, _, _ = infer_input_spec(train_loader)
     num_classes = infer_num_classes(train_loader)
 
     models = {
-                name: adapt_model_to_data(model.to(device), input_channels=input_channels, num_classes=num_classes) for name, model in models.items()
-            }
+        name: adapt_model_to_data(
+            model, input_channels=input_channels, num_classes=num_classes
+        ).to(device)
+        for name, model in models.items()
+    }
 
     summary = fit_and_evaluate(models=models, train_loader=train_loader, test_loader=test_loader, device=device, epochs=epochs)
 
