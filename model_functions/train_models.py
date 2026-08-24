@@ -125,9 +125,12 @@ def evaluate(model: nn.Module, loader: DataLoader[Any], device: torch.device) ->
 
 @torch.no_grad()
 def evaluate_confusion_matrix(
-    model: nn.Module, loader: DataLoader[Any], device: torch.device
-) -> list[list[int]]:
-    """Evaluate a model and return a true-label by predicted-label matrix."""
+    model: nn.Module,
+    loader: DataLoader[Any],
+    device: torch.device,
+    label_names: list[str] | None = None,
+) -> dict[str, Any]:
+    """Evaluate a model and return a confusion matrix with marginal totals."""
     model.eval()
     confusion_matrix: torch.Tensor | None = None
 
@@ -151,7 +154,27 @@ def evaluate_confusion_matrix(
     if confusion_matrix is None:
         raise ValueError("Cannot evaluate a model with an empty data loader.")
 
-    return confusion_matrix.cpu().tolist()
+    matrix = confusion_matrix.cpu().tolist()
+    row_totals = [sum(row) for row in matrix]
+    column_totals = [sum(matrix[row][column] for row in range(len(matrix))) for column in range(len(matrix))]
+    result: dict[str, Any] = {
+        "matrix": matrix,
+        "row_totals": row_totals,
+        "column_totals": column_totals,
+        "total": sum(row_totals),
+    }
+    if label_names is not None and len(label_names) == len(matrix):
+        result["labels"] = label_names
+    return result
+
+
+def get_label_names(loader: DataLoader[Any]) -> list[str] | None:
+    """Return dataset label names when the wrapped dataset exposes them."""
+    dataset = loader.dataset
+    while hasattr(dataset, "dataset"):
+        dataset = dataset.dataset
+    labels = getattr(dataset, "classes", None)
+    return [str(label) for label in labels] if labels is not None else None
 
 
 # @torch.no_grad()
@@ -218,7 +241,12 @@ def fit_and_evaluate(
                     "test_acc": test_acc,
                 }
             )
-        confusion_matrix = evaluate_confusion_matrix(model, test_loader, device)
+        confusion_matrix = evaluate_confusion_matrix(
+            model,
+            test_loader,
+            device,
+            label_names=get_label_names(test_loader),
+        )
         print()
         results[name] = {
             "history": history,

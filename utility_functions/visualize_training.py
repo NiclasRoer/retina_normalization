@@ -46,6 +46,9 @@ def plot_report(report: dict[str, Any], output_dir: Path) -> None:
         loss_axis.plot(epochs, test_loss, marker="o", label=model_name)
         accuracy_axis.plot(epochs, test_accuracy, marker="o", label=model_name)
 
+        model_output_dir = output_dir / model_name
+        model_output_dir.mkdir(parents=True, exist_ok=True)
+
         figure, axes = plt.subplots(1, 2, figsize=(12, 5), constrained_layout=True)
         axes[0].plot(epochs, train_loss, marker="o", label="Train")
         axes[0].plot(epochs, test_loss, marker="o", label="Test")
@@ -62,22 +65,30 @@ def plot_report(report: dict[str, Any], output_dir: Path) -> None:
         axes[1].set_ylim(0, 1)
         axes[1].legend()
 
-        figure.savefig(output_dir / f"{model_name}_metrics.png", dpi=150)
+        figure.savefig(model_output_dir / "metrics.png", dpi=150)
         plt.close(figure)
 
         if isinstance(model_result, dict) and "confusion_matrix" in model_result:
+            confusion_data = model_result["confusion_matrix"]
+            if isinstance(confusion_data, dict):
+                matrix = confusion_data["matrix"]
+                labels = confusion_data.get("labels")
+            else:
+                matrix = confusion_data
+                labels = None
             confusion_figure, confusion_axis = plt.subplots(
                 figsize=(7, 6), constrained_layout=True
             )
-            image = confusion_axis.imshow(
-                model_result["confusion_matrix"], cmap="Blues"
-            )
+            image = confusion_axis.imshow(matrix, cmap="Blues")
             confusion_figure.colorbar(image, ax=confusion_axis)
             confusion_axis.set_title(f"{model_name} confusion matrix")
             confusion_axis.set_xlabel("Predicted label")
             confusion_axis.set_ylabel("True label")
+            if labels:
+                confusion_axis.set_xticks(range(len(labels)), labels, rotation=45, ha="right")
+                confusion_axis.set_yticks(range(len(labels)), labels)
             confusion_figure.savefig(
-                output_dir / f"{model_name}_confusion_matrix.png", dpi=150
+                model_output_dir / "confusion_matrix.png", dpi=150
             )
             plt.close(confusion_figure)
 

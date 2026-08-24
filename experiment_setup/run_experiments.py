@@ -46,7 +46,7 @@ def run_experiment(models: dict[str, nn.Module], output_dir: str | None = None, 
 
     if output_dir is not None:
         experiment_dir = Path(output_dir) / (
-            f"experiment_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            f"experiment_{datetime.now().strftime('%m%d_%H%M')}"
         )
         experiment_dir.mkdir(parents=True, exist_ok=True)
         report_path = experiment_dir / "report.json"

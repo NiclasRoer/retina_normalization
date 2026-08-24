@@ -25,7 +25,8 @@ repeatable. Current building blocks include:
 	shifts, and contrast shifts for robustness measurements.
 - **Efficiency measurements** such as parameter counts and model compute
 	estimates, alongside training and evaluation metrics.
-- **Timestamped reports and plots** saved under `reports/` for later analysis.
+- **Timestamped reports and plots** saved under `reports/` for later analysis,
+  with a dedicated visual-output folder for each model.
 
 The current default benchmark uses CIFAR-10, a capped sample of the training
 and test splits, ImageNet-pretrained model weights, and a newly adapted
@@ -90,7 +91,11 @@ python main.py --family mobilenetv3 --family efficientnet
 
 When no model is specified, the benchmark uses `mobilenet_v3_small` as its
 baseline. New results are written to a timestamped directory such as
-`reports/experiment_YYYYMMDD_HHMMSS/`.
+`reports/experiment_MMDD_HHMM/`. Each model's metrics and confusion-matrix
+visuals are stored in a subdirectory named after that model.
+
+Confusion-matrix entries include the matrix itself, row totals, column totals,
+the grand total, and dataset label names when the dataset exposes them.
 
 ## Interpreting Results
 
