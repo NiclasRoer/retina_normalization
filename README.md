@@ -1,7 +1,119 @@
-Step 1:
+# Retina Normalization
 
-Create venv on Windows use:
+An experimental benchmark for exploring bio- and neuroinspired algorithmics in
+convolutional neural networks.
+
+The project asks a practical question: how do retina-inspired input mechanisms
+change the accuracy, robustness, efficiency, and training behavior of different
+CNN architectures? It provides a small, reproducible setup for comparing a
+baseline CNN with models augmented by biologically motivated preprocessing and
+normalization ideas.
+
+> **Status:** Early research prototype. APIs, experiment design, and reported
+> results are expected to change.
+
+## Research Direction
+
+The experiments are intended to make architectural comparisons measurable and
+repeatable. Current building blocks include:
+
+- **CNN model comparisons** using torchvision architectures and architecture
+	families such as ResNet, MobileNet, ConvNeXt, EfficientNet, and RegNet.
+- **Retina-inspired preprocessing** as a front-end for models that receive
+	visual input.
+- **Controlled input corruptions** including Gaussian noise, blur, brightness
+	shifts, and contrast shifts for robustness measurements.
+- **Efficiency measurements** such as parameter counts and model compute
+	estimates, alongside training and evaluation metrics.
+- **Timestamped reports and plots** saved under `reports/` for later analysis.
+
+The current default benchmark uses CIFAR-10, a capped sample of the training
+and test splits, ImageNet-pretrained model weights, and a newly adapted
+10-class classifier head. These defaults are deliberately lightweight so that
+experiments can be iterated on a local machine before scaling up.
+
+## Project Layout
+
+| Directory | Purpose |
+| --- | --- |
+| `dataset_functions/` | Dataset readers and data loader construction |
+| `experiment_setup/` | Experiment orchestration and input corruptions |
+| `measurement_functions/` | Compute and efficiency measurements |
+| `model_functions/` | Model catalogs, loading, adaptation, and training |
+| `retina_mechanisms/` | Retina-inspired preprocessing components |
+| `utility_functions/` | Argument parsing and visualization |
+| `reports/` | Generated experiment reports and plots |
+
+## Setup
+
+Requirements:
+
+- Python 3.12
+- A working PyTorch installation for your hardware
+- Optional CUDA support for GPU experiments
+
+### Windows PowerShell
+
+```powershell
 . .\setup_venv.ps1
+```
 
-On WSL Ubuntu:
+### WSL or Linux
+
+```bash
 source ./setup_venv.sh
+```
+
+The setup scripts create and activate the project virtual environment and
+install the dependencies declared in `pyproject.toml`.
+
+## Run A Benchmark
+
+Run the default experiment:
+
+```bash
+python main.py
+```
+
+Select individual models by repeating `--model`:
+
+```bash
+python main.py --model resnet18 --model mobilenet_v3_small
+```
+
+Select a cataloged architecture family with `--family`:
+
+```bash
+python main.py --family resnet
+python main.py --family mobilenetv3 --family efficientnet
+```
+
+When no model is specified, the benchmark uses `mobilenet_v3_small` as its
+baseline. New results are written to a timestamped directory such as
+`reports/experiment_YYYYMMDD_HHMMSS/`.
+
+## Interpreting Results
+
+Each experiment records the available device, training configuration, and
+metric histories in `report.json`. Plots in the same report directory make it
+possible to inspect learning curves and compare model behavior across runs.
+
+Because this is an exploratory setup, results should be treated as directional
+until experiments use fixed seeds, larger dataset splits, repeated trials, and
+explicit comparisons between clean and corrupted inputs.
+
+## Contributing Experiments
+
+Useful contributions are small, well-isolated experiments that make one
+bio-inspired hypothesis testable. When adding a mechanism or benchmark,
+document:
+
+1. The biological or neuroscientific motivation.
+2. The model interface and computational cost.
+3. The baseline and control condition.
+4. The datasets, corruption settings, and evaluation metrics.
+5. The limitations and the conditions under which the result was obtained.
+
+## License
+
+No license has been declared yet.
