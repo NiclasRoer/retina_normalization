@@ -88,7 +88,7 @@ if [ -n "${VIRTUAL_ENV:-}" ]; then
     echo "Installing dependencies from pyproject.toml into the active environment..."
     uv sync --active --extra dev
     echo "Installing CUDA-enabled PyTorch from $PYTORCH_INDEX..."
-    uv pip install --reinstall 'torch==2.11.0+cu128' 'torchvision==0.26.0+cu128' \
+    uv pip install --reinstall 'numpy<2.3' 'torch==2.9.1+cu128' 'torchvision==0.24.1+cu128' \
         --index-url "$PYTORCH_INDEX" \
         --extra-index-url https://pypi.org/simple \
         --index-strategy unsafe-best-match
