@@ -31,5 +31,10 @@ def parse_args() -> argparse.Namespace:
         dest="families",
         help="Architecture family to inspect/evaluate. Can be specified multiple times for multiple families.",
     )
+    parser.add_argument(
+        "--dataset",
+        default="CIFAR10",
+        help="Name of the dataset class in torchvision.datasets.",
+    )
 
     return parser.parse_args()

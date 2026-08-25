@@ -16,21 +16,26 @@ from model_functions.train_models import adapt_model_to_data, fit_and_evaluate
 from utility_functions.visualize_training import plot_report
 
 
-def run_experiment(models: dict[str, nn.Module], output_dir: str | None = None, epochs: int = 1) -> dict[str, Any]:
+def run_experiment(
+    models: dict[str, nn.Module],
+    output_dir: str | None = None,
+    epochs: int = 1,
+    dataset_name: str = "CIFAR10",
+) -> dict[str, Any]:
     """Train models, evaluate them, and optionally save a JSON report.
 
     Args:
         models: Models to train, keyed by their display names.
         output_dir: Optional directory for the generated report.
         epochs: Number of training epochs per model.
+        dataset_name: Name of the dataset class in torchvision.datasets.
 
     Returns:
         A dictionary containing device, epoch count, and metric histories.
     """
     torch.set_num_threads(1)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    print(device)
-    train_loader, test_loader = build_dataloaders(batch_size=16)
+    train_loader, test_loader = build_dataloaders(batch_size=16, dataset_name=dataset_name)
 
     input_channels, _, _ = infer_input_spec(train_loader)
     num_classes = infer_num_classes(train_loader)

@@ -100,21 +100,34 @@ class LocalMNIST(Dataset):
         return image, label
 
 
-class LocalCIFAR10(Dataset):
-    """Thin wrapper around torchvision's CIFAR-10 dataset for RGB pretrained models."""
+class LocalDataset(Dataset):
+    """Thin wrapper around a torchvision dataset stored under a local root."""
 
-    def __init__(self, data_root: Path, train: bool, transform: Any | None = None) -> None:
-        """Initialize the CIFAR-10 split and download it when necessary.
+    def __init__(
+            self,
+            data_root: Path,
+            dataset_name: str,
+            train: bool,
+            transform: Any | None = None,
+    ) -> None:
+        """Initialize a torchvision dataset split and download it when necessary.
 
         Args:
-            data_root: Directory used to store the CIFAR-10 files.
+            data_root: Directory used to store the dataset files.
+            dataset_name: Name of the dataset class in ``torchvision.datasets``.
             train: Whether to load the training split.
             transform: Optional transform applied to each image.
         """
         self.transform = transform
         self.data_root = Path(data_root)
         self.data_root.mkdir(parents=True, exist_ok=True)
-        self.dataset = datasets.CIFAR10(
+
+        try:
+            dataset_class = getattr(datasets, dataset_name)
+        except AttributeError as error:
+            raise ValueError(f"Unknown torchvision dataset: {dataset_name}") from error
+
+        self.dataset = dataset_class(
             root=str(self.data_root),
             train=train,
             download=True,
@@ -129,10 +142,15 @@ class LocalCIFAR10(Dataset):
         """Return a channel-first image tensor and label at the index."""
         image, label = self.dataset[idx]
         image = np.asarray(image)
-        image = torch.from_numpy(image).permute(2, 0, 1).to(torch.float32) / 255.0
+        image_tensor = torch.from_numpy(image)
+        if image_tensor.ndim == 2:
+            image_tensor = image_tensor.unsqueeze(0)
+        else:
+            image_tensor = image_tensor.permute(2, 0, 1)
+        image_tensor = image_tensor.to(torch.float32) / 255.0
         if self.transform is not None:
-            image = self.transform(image)
-        return image, torch.tensor(label, dtype=torch.int64)
+            image_tensor = self.transform(image_tensor)
+        return image_tensor, torch.tensor(label, dtype=torch.int64)
 
 
 def build_dataloaders(
@@ -140,14 +158,16 @@ def build_dataloaders(
         num_workers: int = 0,
         max_train_samples: int = 1024,
         max_test_samples: int = 256,
+        dataset_name: str = "CIFAR10",
 ) -> tuple[DataLoader[Any], DataLoader[Any]]:
-    """Build training and test data loaders for CIFAR-10.
+    """Build training and test data loaders for a torchvision dataset.
 
     Args:
         batch_size: Number of samples in each batch.
         num_workers: Number of worker processes used by each loader.
         max_train_samples: Optional cap on training samples.
         max_test_samples: Optional cap on test samples.
+        dataset_name: Name of the dataset class in torchvision.datasets.
 
     Returns:
         A training data loader and a test data loader.
@@ -162,8 +182,18 @@ def build_dataloaders(
     data_root = Path(__file__).resolve().parents[1] / "data"
     data_root.mkdir(parents=True, exist_ok=True)
 
-    train_dataset = LocalCIFAR10(data_root=data_root, train=True, transform=transform)
-    test_dataset = LocalCIFAR10(data_root=data_root, train=False, transform=transform)
+    train_dataset = LocalDataset(
+        data_root=data_root,
+        dataset_name=dataset_name,
+        train=True,
+        transform=transform,
+    )
+    test_dataset = LocalDataset(
+        data_root=data_root,
+        dataset_name=dataset_name,
+        train=False,
+        transform=transform,
+    )
 
     if max_train_samples is not None and len(train_dataset) > max_train_samples:
         train_indices = torch.randperm(len(train_dataset))[:max_train_samples]
@@ -171,6 +201,12 @@ def build_dataloaders(
     if max_test_samples is not None and len(test_dataset) > max_test_samples:
         test_indices = torch.randperm(len(test_dataset))[:max_test_samples]
         test_dataset = Subset(test_dataset, test_indices.tolist())
+
+    print(f'Models training on dataset: {dataset_name}')
+    print(f'  Training device: {torch.device("cuda" if torch.cuda.is_available() else "cpu")}')
+    print(f'  Training/Test Samples: {len(train_dataset)}/{len(test_dataset)}')
+    print(f'  Batch Size: {batch_size}')
+    print(f'  Transformations: {transform}\n')
 
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
     test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
