@@ -28,8 +28,11 @@ def infer_input_spec(loader: DataLoader[Any]) -> tuple[int, int, int]:
 def infer_num_classes(loader: DataLoader[Any]) -> int:
     """Infer the number of classes from either dataset metadata or the first batch labels."""
     dataset = loader.dataset
-    if hasattr(dataset, "classes") and dataset.classes:
-        return len(dataset.classes)
+    while hasattr(dataset, "dataset"):
+        dataset = dataset.dataset
+    classes = getattr(dataset, "classes", None)
+    if classes:
+        return len(classes)
 
     try:
         _, labels = next(iter(loader))

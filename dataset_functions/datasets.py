@@ -94,7 +94,7 @@ class LocalMNIST(Dataset):
         """Return an image and label at the requested index."""
         image = self.images[idx]
         label = self.labels[idx]
-        image = image.unsqueeze(0)
+        image = image.unsqueeze(0).repeat(3, 1, 1)
         if self.transform is not None:
             image = self.transform(image)
         return image, label
@@ -144,7 +144,7 @@ class LocalDataset(Dataset):
         image = np.asarray(image)
         image_tensor = torch.from_numpy(image)
         if image_tensor.ndim == 2:
-            image_tensor = image_tensor.unsqueeze(0)
+            image_tensor = image_tensor.unsqueeze(0).repeat(3, 1, 1)
         else:
             image_tensor = image_tensor.permute(2, 0, 1)
         image_tensor = image_tensor.to(torch.float32) / 255.0
@@ -156,8 +156,8 @@ class LocalDataset(Dataset):
 def build_dataloaders(
         batch_size: int = 64,
         num_workers: int = 0,
-        max_train_samples: int = 1024,
-        max_test_samples: int = 256,
+        max_train_samples: None | int = 1024,
+        max_test_samples: None | int = 256,
         dataset_name: str = "CIFAR10",
 ) -> tuple[DataLoader[Any], DataLoader[Any]]:
     """Build training and test data loaders for a torchvision dataset.
