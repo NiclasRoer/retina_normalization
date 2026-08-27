@@ -100,6 +100,44 @@ class LocalMNIST(Dataset):
         return image, label
 
 
+class CustomDataset(Dataset):
+    """Blueprint for a custom dataset used by :func:`build_dataloaders`.
+
+    To add a custom dataset:
+
+    1. Create a subclass of ``CustomDataset``.
+    2. Implement ``__len__`` to return the number of samples in the split.
+    3. Implement ``__getitem__`` to return ``(image, label)`` for an index.
+    4. Convert images to float tensors with shape ``[channels, height, width]``
+       and values in the ``[0, 1]`` range.
+    5. Apply ``self.transform`` to each image when it is not ``None``.
+    6. Select the subclass in ``build_dataloaders`` when ``custom=True``.
+
+    The ``train`` attribute identifies the requested split, and ``data_root``
+    points to the local data directory.
+    """
+
+    def __init__(self, data_root: Path, train: bool, transform: Any | None = None) -> None:
+        """Initialize the shared custom-dataset configuration.
+
+        Args:
+            data_root: Directory containing the custom dataset files.
+            train: Whether to load the training split.
+            transform: Optional transform applied to each image.
+        """
+        self.data_root = Path(data_root)
+        self.train = train
+        self.transform = transform
+
+    def __len__(self) -> int:
+        """Return the number of samples in the custom dataset."""
+        raise NotImplementedError("CustomDataset.__len__ must be implemented.")
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return an image tensor and label for the requested index."""
+        raise NotImplementedError("CustomDataset.__getitem__ must be implemented.")
+
+
 class LocalDataset(Dataset):
     """Thin wrapper around a torchvision dataset stored under a local root."""
 
@@ -159,6 +197,7 @@ def build_dataloaders(
         max_train_samples: None | int = 1024,
         max_test_samples: None | int = 256,
         dataset_name: str = "CIFAR10",
+        custom: bool = False,
 ) -> tuple[DataLoader[Any], DataLoader[Any]]:
     """Build training and test data loaders for a torchvision dataset.
 
@@ -168,6 +207,7 @@ def build_dataloaders(
         max_train_samples: Optional cap on training samples.
         max_test_samples: Optional cap on test samples.
         dataset_name: Name of the dataset class in torchvision.datasets.
+        custom: Whether to use the custom dataset blueprint instead.
 
     Returns:
         A training data loader and a test data loader.
@@ -182,17 +222,20 @@ def build_dataloaders(
     data_root = Path(__file__).resolve().parents[1] / "data"
     data_root.mkdir(parents=True, exist_ok=True)
 
-    train_dataset = LocalDataset(
+    dataset_class = CustomDataset if custom else LocalDataset
+    dataset_kwargs = {} if custom else {"dataset_name": dataset_name}
+ 
+    train_dataset = dataset_class(
         data_root=data_root,
-        dataset_name=dataset_name,
         train=True,
         transform=transform,
+        **dataset_kwargs,
     )
-    test_dataset = LocalDataset(
+    test_dataset = dataset_class(
         data_root=data_root,
-        dataset_name=dataset_name,
         train=False,
         transform=transform,
+        **dataset_kwargs,
     )
 
     if max_train_samples is not None and len(train_dataset) > max_train_samples:

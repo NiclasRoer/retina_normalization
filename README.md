@@ -97,6 +97,51 @@ visuals are stored in a subdirectory named after that model.
 Confusion-matrix entries include the matrix itself, row totals, column totals,
 the grand total, and dataset label names when the dataset exposes them.
 
+## Add A Custom Dataset
+
+Custom datasets use the `CustomDataset` blueprint in
+`dataset_functions/datasets.py`. To add one:
+
+1. Create a subclass of `CustomDataset`.
+2. Implement `__len__()` to return the number of samples in the requested
+	split.
+3. Implement `__getitem__(index)` to return an `(image, label)` pair.
+4. Return images as float tensors with shape `[channels, height, width]` and
+	values in the `[0, 1]` range. Repeat grayscale channels to produce three
+	channels for the pretrained models.
+5. Apply `self.transform` to each image when it is not `None`.
+6. Update the `custom=True` branch in `build_dataloaders()` to instantiate
+	your subclass.
+
+For example, a small in-memory dataset can be written as:
+
+```python
+class MyDataset(CustomDataset):
+	def __init__(self, data_root, train, transform=None):
+		super().__init__(data_root, train, transform)
+		self.samples = [(torch.zeros(3, 32, 32), 0), (torch.ones(3, 32, 32), 1)]
+
+	def __len__(self):
+		return len(self.samples)
+
+	def __getitem__(self, index):
+		image, label = self.samples[index]
+		if self.transform is not None:
+			image = self.transform(image)
+		return image, torch.tensor(label, dtype=torch.int64)
+```
+
+The `train` attribute indicates whether the training or test split is being
+loaded, and `data_root` points to the local `data/` directory. The custom
+branch can then be exercised through the loader with:
+
+```python
+build_dataloaders(dataset_name="MyDataset", custom=True)
+```
+
+`dataset_name` remains the name used by the torchvision branch; the custom
+branch uses the subclass selected in `build_dataloaders()`.
+
 ## Interpreting Results
 
 Each experiment records the available device, training configuration, and
