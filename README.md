@@ -69,6 +69,26 @@ source ./setup_venv.sh
 The setup scripts create and activate the project virtual environment and
 install the dependencies declared in `pyproject.toml`.
 
+### Docker
+
+Build the image from the repository root:
+
+```bash
+docker build -t retina-normalization .
+```
+
+Run a benchmark while keeping datasets and reports on the host:
+
+```bash
+docker run --rm \
+	-v "$(pwd)/data:/app/data" \
+	-v "$(pwd)/reports:/app/reports" \
+	retina-normalization --dataset CIFAR10
+```
+
+The image uses the CPU PyTorch packages from `pyproject.toml`. GPU execution
+requires a CUDA-enabled base image and the NVIDIA Container Toolkit.
+
 ## Run A Benchmark
 
 Run the default experiment:
