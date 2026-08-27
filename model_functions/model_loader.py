@@ -1,5 +1,6 @@
 """Utilities for discovering, constructing, and inspecting torchvision models."""
 
+import timm
 import torch
 import torch.nn as nn
 import torchvision.models
@@ -8,6 +9,31 @@ from model_functions.constants import (
     TORCHVISION_FAMILY_CATALOG,
     TORCHVISION_MODEL_CATALOG,
 )
+
+
+class CustomModel(nn.Module):
+    """Blueprint for a custom model used by :func:`load_models`.
+
+    To add a custom model:
+
+    1. Create a subclass of ``CustomModel``.
+    2. Call ``super().__init__(model_name)`` in its constructor.
+    3. Define the model layers in the subclass constructor.
+    4. Implement ``forward`` to return class logits for an image batch.
+     5. Replace the ``CustomModel`` construction in ``load_models`` with the
+         subclass, or add a custom model registry.
+     6. Pass the custom model name through ``custom_models`` when calling
+         ``load_models``.
+    """
+
+    def __init__(self, model_name: str) -> None:
+        """Initialize shared custom-model metadata."""
+        super().__init__()
+        self.model_name = model_name
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        """Return class logits for a batch of inputs."""
+        raise NotImplementedError("CustomModel.forward must be implemented.")
 
 
 def experimental_models() -> None:
@@ -22,9 +48,8 @@ def experimental_models() -> None:
     Raises:
         None: This function does not raise custom exceptions.
     """
-    pass
-    # model = timm.create_model("mobileone_s0")
-    # get_model_shape(model)
+    model = timm.create_model("mobileone_s0")
+    get_model_shape(model)
 
 
 def discover_model_names(family: str) -> list[str]:
@@ -51,6 +76,7 @@ def provide_model(model_name: str, weights=None, pretrained: bool = True, get_me
         model_name: The torchvision model name to load.
         weights: Optional pretrained weights to use.
         pretrained: Whether to use pretrained weights when available.
+        get_metadata: Optional printing of metadata like GFlops or Acc1/Acc5.
 
     Returns:
         nn.Module: The constructed PyTorch model.
@@ -255,12 +281,17 @@ def get_model_metadata(model_weights) -> None:
     print(f"Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}")
     
 
-def load_models(models: list[str] | None = None, families: list[str] | None = None) -> dict[str, nn.Module]:
-    """Load requested torchvision models on the available compute device.
+def load_models(
+    models: list[str] | None = None,
+    families: list[str] | None = None,
+    custom_models: list[str] | None = None,
+) -> dict[str, nn.Module]:
+    """Load requested torchvision and custom models on the available device.
 
     Args:
-        models: Optional model names to load.
+        models: Optional torchvision model names to load.
         families: Optional catalog family names whose models should be loaded.
+        custom_models: Optional custom model names to load.
 
     Returns:
         A dictionary mapping successfully loaded model names to model instances.
@@ -268,17 +299,20 @@ def load_models(models: list[str] | None = None, families: list[str] | None = No
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     requested_models = list(models or [])
+    requested_custom_models = list(custom_models or [])
 
     for family in families or []:
         requested_models.extend(discover_model_names(family))
 
     requested_models = list(dict.fromkeys(requested_models))
 
-    if not requested_models:
+    if not requested_models and not requested_custom_models:
         requested_models = ["mobilenet_v3_small"]
         print("No models provided; using mobilenet_v3_small as the baseline.")
     else:
-        print(f"Models to benchmark: {requested_models}")
+        print(
+            f"Models to benchmark: {requested_models + requested_custom_models}"
+        )
 
     loaded_models = {}
     for model_name in requested_models:
@@ -286,5 +320,8 @@ def load_models(models: list[str] | None = None, families: list[str] | None = No
             loaded_models[model_name] = provide_model(model_name).to(device)
         else:
             print(f"Unknown torchvision model: '{model_name}'")
+
+    for model_name in requested_custom_models:
+        loaded_models[model_name] = CustomModel(model_name).to(device)
 
     return loaded_models

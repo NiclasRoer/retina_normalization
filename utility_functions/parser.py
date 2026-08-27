@@ -36,5 +36,11 @@ def parse_args() -> argparse.Namespace:
         default="CIFAR10",
         help="Name of the dataset class in torchvision.datasets.",
     )
+    parser.add_argument(
+        "--custom-model",
+        action="append",
+        dest="custom_models",
+        help="Custom model name to benchmark. Can be specified multiple times.",
+    )
 
     return parser.parse_args()

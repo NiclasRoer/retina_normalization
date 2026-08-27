@@ -10,7 +10,12 @@ def main() -> None:
     args = parse_args()
     families = args.families if args.families else None
     models = args.models if args.models else None
-    loaded_models = load_models(models=models, families=families)
+    custom_models = args.custom_models if args.custom_models else None
+    loaded_models = load_models(
+        models=models,
+        families=families,
+        custom_models=custom_models,
+    )
 
     run_experiment(
         models=loaded_models,

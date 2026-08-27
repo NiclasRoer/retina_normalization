@@ -82,6 +82,16 @@ Select individual models by repeating `--model`:
 python main.py --model resnet18 --model mobilenet_v3_small
 ```
 
+Mix torchvision and custom models by repeating either model flag:
+
+```bash
+python main.py --model resnet18 --custom-model my_model
+```
+
+Custom model names use the `CustomModel` blueprint in
+`model_functions/model_loader.py`; implement the blueprint before running a
+custom model in an experiment.
+
 Select a cataloged architecture family with `--family`:
 
 ```bash
