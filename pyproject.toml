@@ -21,8 +21,8 @@ dependencies = [
 dev = ["ruff>=0.8.0"]
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["utility_functions*", "measurement_functions*"]
+where = ["packages"]
+include = ["*"]
 
 [tool.ruff]
 target-version = "py312"

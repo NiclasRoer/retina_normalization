@@ -37,12 +37,13 @@ experiments can be iterated on a local machine before scaling up.
 
 | Directory | Purpose |
 | --- | --- |
-| `dataset_functions/` | Dataset readers and data loader construction |
-| `experiment_setup/` | Experiment orchestration and input corruptions |
-| `measurement_functions/` | Compute and efficiency measurements |
-| `model_functions/` | Model catalogs, loading, adaptation, and training |
-| `retina_mechanisms/` | Retina-inspired preprocessing components |
-| `utility_functions/` | Argument parsing and visualization |
+| `packages/dataset_functions/` | Dataset readers and data loader construction |
+| `packages/experiment_setup/` | Experiment orchestration and input corruptions |
+| `packages/measurement_functions/` | Compute and efficiency measurements |
+| `packages/model_functions/` | Model catalogs, loading, adaptation, and training |
+| `packages/retina_mechanisms/` | Retina-inspired preprocessing components |
+| `packages/utility_functions/` | Argument parsing and visualization |
+| `apps/` | Application entry points |
 | `reports/` | Generated experiment reports and plots |
 
 ## Setup
@@ -73,30 +74,30 @@ install the dependencies declared in `pyproject.toml`.
 Run the default experiment:
 
 ```bash
-python main.py
+python apps/main.py
 ```
 
 Select individual models by repeating `--model`:
 
 ```bash
-python main.py --model resnet18 --model mobilenet_v3_small
+python apps/main.py --model resnet18 --model mobilenet_v3_small
 ```
 
 Mix torchvision and custom models by repeating either model flag:
 
 ```bash
-python main.py --model resnet18 --custom-model my_model
+python apps/main.py --model resnet18 --custom-model my_model
 ```
 
 Custom model names use the `CustomModel` blueprint in
-`model_functions/model_loader.py`; implement the blueprint before running a
+`packages/model_functions/model_loader.py`; implement the blueprint before running a
 custom model in an experiment.
 
 Select a cataloged architecture family with `--family`:
 
 ```bash
-python main.py --family resnet
-python main.py --family mobilenetv3 --family efficientnet
+python apps/main.py --family resnet
+python apps/main.py --family mobilenetv3 --family efficientnet
 ```
 
 When no model is specified, the benchmark uses `mobilenet_v3_small` as its
@@ -110,7 +111,7 @@ the grand total, and dataset label names when the dataset exposes them.
 ## Add A Custom Dataset
 
 Custom datasets use the `CustomDataset` blueprint in
-`dataset_functions/datasets.py`. To add one:
+`packages/dataset_functions/datasets.py`. To add one:
 
 1. Create a subclass of `CustomDataset`.
 2. Implement `__len__()` to return the number of samples in the requested

@@ -219,7 +219,7 @@ def build_dataloaders(
             std=(0.229, 0.224, 0.225),
         ),
     ])
-    data_root = Path(__file__).resolve().parents[1] / "data"
+    data_root = Path(__file__).resolve().parents[2] / "data"
     data_root.mkdir(parents=True, exist_ok=True)
 
     dataset_class = CustomDataset if custom else LocalDataset
