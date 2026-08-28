@@ -1,9 +1,16 @@
 venv/
 .venv/
 data/*
-!data/example_dataset/
-data/example_dataset/*
-!data/example_dataset/*.npz
+!data/datasets/
+data/datasets/*
+!data/datasets/example_dataset/
+data/datasets/example_dataset/*
+!data/datasets/example_dataset/*.npz
+!data/modelweights/
+data/modelweights/*
+!data/modelweights/example_model/
+data/modelweights/example_model/*
+!data/modelweights/example_model/weights.pth
 reports/
 
 .ruff_cache/

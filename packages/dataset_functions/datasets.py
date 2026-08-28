@@ -145,7 +145,7 @@ class ExampleDataset(CustomDataset):
         """Load the requested example split from a NumPy archive."""
         super().__init__(data_root, train, transform)
         split_name = "train" if train else "test"
-        archive_path = self.data_root / "example_dataset" / f"{split_name}.npz"
+        archive_path = self.data_root / "datasets" / "example_dataset" / f"{split_name}.npz"
         if not archive_path.exists():
             raise FileNotFoundError(f"Example dataset split was not found: {archive_path}")
 

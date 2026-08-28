@@ -1,5 +1,7 @@
 """Utilities for discovering, constructing, and inspecting torchvision models."""
 
+from pathlib import Path
+
 import timm
 import torch
 import torch.nn as nn
@@ -34,6 +36,37 @@ class CustomModel(nn.Module):
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
         """Return class logits for a batch of inputs."""
         raise NotImplementedError("CustomModel.forward must be implemented.")
+
+
+class ExampleModel(CustomModel):
+    """Small custom CNN demonstrating optional local weight loading."""
+
+    def __init__(
+        self,
+        model_name: str = "ExampleModel",
+        num_classes: int = 3,
+        weights_path: Path | None = None,
+    ) -> None:
+        """Build the example CNN and optionally load a state dictionary."""
+        super().__init__(model_name)
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 16, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(kernel_size=2),
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
+            nn.ReLU(),
+            nn.AdaptiveAvgPool2d((1, 1)),
+        )
+        self.classifier = nn.Linear(32, num_classes)
+
+        if weights_path is not None:
+            state_dict = torch.load(weights_path, map_location="cpu", weights_only=True)
+            self.load_state_dict(state_dict)
+
+    def forward(self, inputs: torch.Tensor) -> torch.Tensor:
+        """Return logits for a batch of RGB images."""
+        features = self.features(inputs).flatten(start_dim=1)
+        return self.classifier(features)
 
 
 def experimental_models() -> None:
@@ -321,7 +354,18 @@ def load_models(
         else:
             print(f"Unknown torchvision model: '{model_name}'")
 
+    example_weights_path = (
+        Path(__file__).resolve().parents[2]
+        / "data"
+        / "modelweights"
+        / "example_model"
+        / "weights.pth"
+    )
     for model_name in requested_custom_models:
-        loaded_models[model_name] = CustomModel(model_name).to(device)
+        if model_name == "ExampleModel":
+            weights_path = example_weights_path if example_weights_path.exists() else None
+            loaded_models[model_name] = ExampleModel(weights_path=weights_path).to(device)
+        else:
+            loaded_models[model_name] = CustomModel(model_name).to(device)
 
     return loaded_models

@@ -110,8 +110,18 @@ python apps/main.py --model resnet18 --custom-model my_model
 ```
 
 Custom model names use the `CustomModel` blueprint in
-`packages/model_functions/model_loader.py`; implement the blueprint before running a
-custom model in an experiment.
+`packages/model_functions/model_loader.py`. The repository includes an
+`ExampleModel` with optional weights at
+`data/modelweights/example_model/weights.pth`:
+
+```powershell
+python apps/main.py --custom-model ExampleModel
+```
+
+Construct `ExampleModel()` for random initialization, or pass
+`weights_path=Path("data/modelweights/example_model/weights.pth")` to load the
+example state dictionary. Implement the blueprint before running another custom
+model in an experiment.
 
 Select a cataloged architecture family with `--family`:
 
@@ -132,7 +142,8 @@ the grand total, and dataset label names when the dataset exposes them.
 
 Custom datasets use the `CustomDataset` blueprint in
 `packages/dataset_functions/datasets.py`. The repository includes an executable
-three-class example in `data/example_dataset/`, loaded by `ExampleDataset`:
+three-class example in `data/datasets/example_dataset/`, loaded by
+`ExampleDataset`:
 
 ```python
 build_dataloaders(dataset_name="ExampleDataset", custom=True)
