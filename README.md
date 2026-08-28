@@ -131,7 +131,14 @@ the grand total, and dataset label names when the dataset exposes them.
 ## Add A Custom Dataset
 
 Custom datasets use the `CustomDataset` blueprint in
-`packages/dataset_functions/datasets.py`. To add one:
+`packages/dataset_functions/datasets.py`. The repository includes an executable
+three-class example in `data/example_dataset/`, loaded by `ExampleDataset`:
+
+```python
+build_dataloaders(dataset_name="ExampleDataset", custom=True)
+```
+
+To add another custom dataset:
 
 1. Create a subclass of `CustomDataset`.
 2. Implement `__len__()` to return the number of samples in the requested

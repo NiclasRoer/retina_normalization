@@ -1,7 +1,9 @@
-# Ignore Python virtual environment
 venv/
 .venv/
-data/
+data/*
+!data/example_dataset/
+data/example_dataset/*
+!data/example_dataset/*.npz
 reports/
 
 .ruff_cache/

@@ -138,6 +138,37 @@ class CustomDataset(Dataset):
         raise NotImplementedError("CustomDataset.__getitem__ must be implemented.")
 
 
+class ExampleDataset(CustomDataset):
+    """Small local image dataset demonstrating the custom dataset interface."""
+
+    def __init__(self, data_root: Path, train: bool, transform: Any | None = None) -> None:
+        """Load the requested example split from a NumPy archive."""
+        super().__init__(data_root, train, transform)
+        split_name = "train" if train else "test"
+        archive_path = self.data_root / "example_dataset" / f"{split_name}.npz"
+        if not archive_path.exists():
+            raise FileNotFoundError(f"Example dataset split was not found: {archive_path}")
+
+        archive = np.load(archive_path)
+        self.images = torch.from_numpy(archive["images"]).to(torch.float32) / 255.0
+        self.labels = torch.from_numpy(archive["labels"]).to(torch.int64)
+        if self.images.ndim != 4 or self.images.shape[-1] != 3:
+            raise ValueError("Example images must have shape [samples, height, width, 3].")
+        if len(self.images) != len(self.labels):
+            raise ValueError("Example images and labels must contain the same number of samples.")
+
+    def __len__(self) -> int:
+        """Return the number of images in the requested split."""
+        return len(self.labels)
+
+    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
+        """Return a channel-first image tensor and its class label."""
+        image = self.images[idx].permute(2, 0, 1)
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, self.labels[idx]
+
+
 class LocalDataset(Dataset):
     """Thin wrapper around a torchvision dataset stored under a local root."""
 
@@ -222,7 +253,7 @@ def build_dataloaders(
     data_root = Path(__file__).resolve().parents[2] / "data"
     data_root.mkdir(parents=True, exist_ok=True)
 
-    dataset_class = CustomDataset if custom else LocalDataset
+    dataset_class = ExampleDataset if custom else LocalDataset
     dataset_kwargs = {} if custom else {"dataset_name": dataset_name}
  
     train_dataset = dataset_class(
