@@ -2,7 +2,7 @@
 
 The comparison uses a pretrained and a retinal-inspired preprocessing block on CIFAR10.
 
-The script is intentionally lightweight and educational. It trains for a few 
+The script is intentionally lightweight and educational. It trains for a few
 epochs on MNIST so the comparison can be inspected quickly.
 """
 
@@ -17,8 +17,10 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
-def adapt_model_to_data(model: nn.Module, input_channels: int, num_classes: int) -> nn.Module:
-    """Resize pretrained backbones to match the actual dataset input/output specification."""
+def adapt_model_to_data(
+    model: nn.Module, input_channels: int, num_classes: int
+) -> nn.Module:
+    """Resize backbones to match the dataset input/output specification."""
     if hasattr(model, "conv1") and isinstance(model.conv1, nn.Conv2d):
         conv = model.conv1
         if conv.in_channels != input_channels:
@@ -34,14 +36,18 @@ def adapt_model_to_data(model: nn.Module, input_channels: int, num_classes: int)
             )
             with torch.no_grad():
                 if input_channels < conv.in_channels:
-                    new_conv.weight[:, :input_channels] = conv.weight[:, :input_channels]
+                    new_conv.weight[:, :input_channels] = conv.weight[
+                        :, :input_channels
+                    ]
                 else:
-                    new_conv.weight[:, :conv.in_channels] = conv.weight
+                    new_conv.weight[:, : conv.in_channels] = conv.weight
             model.conv1 = new_conv
 
     if hasattr(model, "features") and isinstance(model.features, nn.Sequential):
         first_layer = model.features[0]
-        if isinstance(first_layer, nn.Sequential) and hasattr(first_layer[0], "in_channels"):
+        if isinstance(first_layer, nn.Sequential) and hasattr(
+            first_layer[0], "in_channels"
+        ):
             conv = first_layer[0]
             if conv.in_channels != input_channels:
                 new_conv = nn.Conv2d(
@@ -54,9 +60,11 @@ def adapt_model_to_data(model: nn.Module, input_channels: int, num_classes: int)
                 )
                 with torch.no_grad():
                     if input_channels < conv.in_channels:
-                        new_conv.weight[:, :input_channels] = conv.weight[:, :input_channels]
+                        new_conv.weight[:, :input_channels] = conv.weight[
+                            :, :input_channels
+                        ]
                     else:
-                        new_conv.weight[:, :conv.in_channels] = conv.weight
+                        new_conv.weight[:, : conv.in_channels] = conv.weight
                 first_layer[0] = new_conv
 
     if hasattr(model, "fc") and hasattr(model.fc, "out_features"):
@@ -66,22 +74,42 @@ def adapt_model_to_data(model: nn.Module, input_channels: int, num_classes: int)
         classifier = model.classifier
         if isinstance(classifier, nn.Sequential):
             last = classifier[-1]
-            if hasattr(last, "in_features") and getattr(last, "out_features", None) != num_classes:
+            if (
+                hasattr(last, "in_features")
+                and getattr(last, "out_features", None) != num_classes
+            ):
                 classifier[-1] = nn.Linear(last.in_features, num_classes)
-        elif hasattr(classifier, "in_features") and getattr(classifier, "out_features", None) != num_classes:
+        elif (
+            hasattr(classifier, "in_features")
+            and getattr(classifier, "out_features", None) != num_classes
+        ):
             model.classifier = nn.Linear(classifier.in_features, num_classes)
 
     return model
 
 
-def train_one_epoch(model: nn.Module, loader: DataLoader[Any], optimizer: torch.optim.Optimizer, device: torch.device) -> tuple[float, float]:
+def train_one_epoch(
+    model: nn.Module,
+    loader: DataLoader[Any],
+    optimizer: torch.optim.Optimizer,
+    device: torch.device,
+) -> tuple[float, float]:
     """Train a model for one epoch and return mean loss and accuracy."""
     model.train()
     total_loss = 0.0
     correct = 0
     total = 0
 
-    loader_loop = tqdm(loader, desc='ACC: 0.0', bar_format='[{elapsed}<{remaining}] {n_fmt}/{total_fmt} | {l_bar}{bar} {rate_fmt}{postfix}', colour='blue', leave=False)
+    loader_loop = tqdm(
+        loader,
+        desc="ACC: 0.0",
+        bar_format=(
+            "[{elapsed}<{remaining}] {n_fmt}/{total_fmt} | "
+            "{l_bar}{bar} {rate_fmt}{postfix}"
+        ),
+        colour="blue",
+        leave=False,
+    )
     for images, labels in loader_loop:
         images = images.to(device)
         labels = labels.to(device)
@@ -103,7 +131,9 @@ def train_one_epoch(model: nn.Module, loader: DataLoader[Any], optimizer: torch.
 
 
 @torch.no_grad()
-def evaluate(model: nn.Module, loader: DataLoader[Any], device: torch.device) -> tuple[float, float]:
+def evaluate(
+    model: nn.Module, loader: DataLoader[Any], device: torch.device
+) -> tuple[float, float]:
     """Evaluate a model and return mean loss and accuracy."""
     model.eval()
     total_loss = 0.0
@@ -156,7 +186,10 @@ def evaluate_confusion_matrix(
 
     matrix = confusion_matrix.cpu().tolist()
     row_totals = [sum(row) for row in matrix]
-    column_totals = [sum(matrix[row][column] for row in range(len(matrix))) for column in range(len(matrix))]
+    column_totals = [
+        sum(matrix[row][column] for row in range(len(matrix)))
+        for column in range(len(matrix))
+    ]
     result: dict[str, Any] = {
         "matrix": matrix,
         "row_totals": row_totals,
@@ -207,20 +240,20 @@ def get_label_names(loader: DataLoader[Any]) -> list[str] | None:
 #     """Evaluate accuracy per corruption plus a mean over the suite."""
 #     corruptions = CORRUPTIONS if corruptions is None else corruptions
 #     per_corruption = {
-#         name: evaluate_corrupted(model, loader, device, fn) for name, fn in corruptions.items()
+#         name: evaluate_corrupted(model, loader, device, fn)
+#         for name, fn in corruptions.items()
 #     }
 #     per_corruption["mean"] = sum(per_corruption.values()) / len(per_corruption)
 #     return per_corruption
 
 
-
 def fit_and_evaluate(
     models: dict[str, nn.Module],
-        train_loader: DataLoader[Any],
-        test_loader: DataLoader[Any],
-        device: torch.device,
-        epochs: int=1,
-        lr: float=1e-4,
+    train_loader: DataLoader[Any],
+    test_loader: DataLoader[Any],
+    device: torch.device,
+    epochs: int = 1,
+    lr: float = 1e-4,
 ) -> dict[str, Any]:
     """Train model for epochs and return per-epoch train/test metrics."""
     results: dict[str, dict[str, Any]] = {}
@@ -229,9 +262,18 @@ def fit_and_evaluate(
         optimizer = torch.optim.Adam(model.parameters(), lr=lr)
         history: list[dict[str, float]] = []
         for epoch in range(epochs):
-            train_loss, train_acc = train_one_epoch(model, train_loader, optimizer, device)
+            train_loss, train_acc = train_one_epoch(
+                model, train_loader, optimizer, device
+            )
             test_loss, test_acc = evaluate(model, test_loader, device)
-            print(f"    Epoch {epoch + 1}: train_acc={train_acc:.4f} test_acc={test_acc:.4f} train_loss={train_loss:.4f} test_loss={test_loss:.4f} ")
+            print(
+                "    "
+                f"Epoch {epoch + 1}: "
+                f"train_acc={train_acc:.4f} "
+                f"test_acc={test_acc:.4f} "
+                f"train_loss={train_loss:.4f} "
+                f"test_loss={test_loss:.4f}"
+            )
             history.append(
                 {
                     "epoch": epoch + 1,
@@ -254,8 +296,8 @@ def fit_and_evaluate(
         }
 
     summary = {
-        'device': str(device),
-        'epochs': epochs,
-        'results': results,
+        "device": str(device),
+        "epochs": epochs,
+        "results": results,
     }
     return summary

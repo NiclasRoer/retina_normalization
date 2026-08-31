@@ -123,7 +123,7 @@ class TestModelTrainingWorkflow:
         assert "simple_model" in summary["results"]
         assert "history" in summary["results"]["simple_model"]
         assert len(summary["results"]["simple_model"]["history"]) == 2
-        
+
         # Verify each epoch has expected fields
         for epoch_data in summary["results"]["simple_model"]["history"]:
             assert "epoch" in epoch_data
@@ -187,7 +187,7 @@ class TestDatasetWorkflow:
         images, labels = next(iter(train_loader))
         with torch.no_grad():
             output = adapted_model(images)
-        
+
         assert output.shape == (images.shape[0], num_classes)
 
 
@@ -210,7 +210,7 @@ class TestCorruptionWorkflow:
 
             # Verify shapes preserved
             assert corrupted.shape == images.shape
-            
+
             # For most corruptions, verify data is modified (skip strict check for blur)
             # Gaussian blur on structured images should still change them noticeably
             if "blur" not in corruption_name.lower():
@@ -278,12 +278,14 @@ class TestCorruptionWorkflow:
             corrupted = corruption_fn(images, severity=0.5)
             with torch.no_grad():
                 corrupted_output = model(corrupted)
-                corrupted_acc = (corrupted_output.argmax(dim=1) == labels).float().mean().item()
+                corrupted_acc = (
+                    (corrupted_output.argmax(dim=1) == labels).float().mean().item()
+                )
             corruption_accs[corruption_name] = corrupted_acc
 
         # Verify we have results for all corruptions
         assert len(corruption_accs) == len(CORRUPTIONS)
-        assert isinstance(clean_acc, float) 
+        assert isinstance(clean_acc, float)
         # Verify accuracies are between 0 and 1
         assert all(0 <= acc <= 1 for acc in corruption_accs.values())
 
@@ -491,7 +493,9 @@ class TestModelAdaptationWorkflow:
         model = provide_model("resnet18", pretrained=False)
 
         for num_classes in [10, 100, 1000]:
-            adapted = adapt_model_to_data(model, input_channels=3, num_classes=num_classes)
+            adapted = adapt_model_to_data(
+                model, input_channels=3, num_classes=num_classes
+            )
 
             # Verify output layer
             assert adapted.fc.out_features == num_classes

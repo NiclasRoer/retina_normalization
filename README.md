@@ -166,18 +166,18 @@ For example, a small in-memory dataset can be written as:
 
 ```python
 class MyDataset(CustomDataset):
-	def __init__(self, data_root, train, transform=None):
-		super().__init__(data_root, train, transform)
-		self.samples = [(torch.zeros(3, 32, 32), 0), (torch.ones(3, 32, 32), 1)]
+    def __init__(self, data_root, train, transform=None):
+        super().__init__(data_root, train, transform)
+        self.samples = [(torch.zeros(3, 32, 32), 0), (torch.ones(3, 32, 32), 1)]
 
-	def __len__(self):
-		return len(self.samples)
+    def __len__(self):
+        return len(self.samples)
 
-	def __getitem__(self, index):
-		image, label = self.samples[index]
-		if self.transform is not None:
-			image = self.transform(image)
-		return image, torch.tensor(label, dtype=torch.int64)
+    def __getitem__(self, index):
+        image, label = self.samples[index]
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, torch.tensor(label, dtype=torch.int64)
 ```
 
 The `train` attribute indicates whether the training or test split is being

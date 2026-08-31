@@ -12,7 +12,9 @@ from torchvision import datasets, transforms
 class LocalMNIST(Dataset):
     """Simple local MNIST dataset reader that uses the downloaded gzip files."""
 
-    def __init__(self, data_root: Path, train: bool, transform: Any | None = None) -> None:
+    def __init__(
+        self, data_root: Path, train: bool, transform: Any | None = None
+    ) -> None:
         """Initialize the dataset and load the local MNIST files.
 
         Args:
@@ -30,9 +32,15 @@ class LocalMNIST(Dataset):
 
     def _resolve_paths(self, train: bool) -> tuple[Path, Path]:
         if train:
-            image_name, label_name = "train-images-idx3-ubyte.gz", "train-labels-idx1-ubyte.gz"
+            image_name, label_name = (
+                "train-images-idx3-ubyte.gz",
+                "train-labels-idx1-ubyte.gz",
+            )
         else:
-            image_name, label_name = "t10k-images-idx3-ubyte.gz", "t10k-labels-idx1-ubyte.gz"
+            image_name, label_name = (
+                "t10k-images-idx3-ubyte.gz",
+                "t10k-labels-idx1-ubyte.gz",
+            )
 
         direct_images = self.data_root / image_name
         direct_labels = self.data_root / label_name
@@ -55,7 +63,9 @@ class LocalMNIST(Dataset):
             return direct_images, direct_labels
 
         raise FileNotFoundError(
-            f"MNIST data for train={train} was not found at {self.data_root} and could not be downloaded."
+            "MNIST data for "
+            f"train={train} was not found at {self.data_root} "
+            "and could not be downloaded."
         )
 
     def _read_images(self, path: Path) -> torch.Tensor:
@@ -83,7 +93,7 @@ class LocalMNIST(Dataset):
         if magic != 2049:
             raise ValueError(f"Unexpected label magic number: {magic}")
         count = int.from_bytes(raw[4:8], "big")
-        labels = raw[8:8 + count]
+        labels = raw[8 : 8 + count]
         return torch.tensor(list(labels), dtype=torch.int64)
 
     def __len__(self) -> int:
@@ -117,7 +127,9 @@ class CustomDataset(Dataset):
     points to the local data directory.
     """
 
-    def __init__(self, data_root: Path, train: bool, transform: Any | None = None) -> None:
+    def __init__(
+        self, data_root: Path, train: bool, transform: Any | None = None
+    ) -> None:
         """Initialize the shared custom-dataset configuration.
 
         Args:
@@ -141,21 +153,31 @@ class CustomDataset(Dataset):
 class ExampleDataset(CustomDataset):
     """Small local image dataset demonstrating the custom dataset interface."""
 
-    def __init__(self, data_root: Path, train: bool, transform: Any | None = None) -> None:
+    def __init__(
+        self, data_root: Path, train: bool, transform: Any | None = None
+    ) -> None:
         """Load the requested example split from a NumPy archive."""
         super().__init__(data_root, train, transform)
         split_name = "train" if train else "test"
-        archive_path = self.data_root / "datasets" / "example_dataset" / f"{split_name}.npz"
+        archive_path = (
+            self.data_root / "datasets" / "example_dataset" / f"{split_name}.npz"
+        )
         if not archive_path.exists():
-            raise FileNotFoundError(f"Example dataset split was not found: {archive_path}")
+            raise FileNotFoundError(
+                f"Example dataset split was not found: {archive_path}"
+            )
 
         archive = np.load(archive_path)
         self.images = torch.from_numpy(archive["images"]).to(torch.float32) / 255.0
         self.labels = torch.from_numpy(archive["labels"]).to(torch.int64)
         if self.images.ndim != 4 or self.images.shape[-1] != 3:
-            raise ValueError("Example images must have shape [samples, height, width, 3].")
+            raise ValueError(
+                "Example images must have shape [samples, height, width, 3]."
+            )
         if len(self.images) != len(self.labels):
-            raise ValueError("Example images and labels must contain the same number of samples.")
+            raise ValueError(
+                "Example images and labels must contain the same number of samples."
+            )
 
     def __len__(self) -> int:
         """Return the number of images in the requested split."""
@@ -173,11 +195,11 @@ class LocalDataset(Dataset):
     """Thin wrapper around a torchvision dataset stored under a local root."""
 
     def __init__(
-            self,
-            data_root: Path,
-            dataset_name: str,
-            train: bool,
-            transform: Any | None = None,
+        self,
+        data_root: Path,
+        dataset_name: str,
+        train: bool,
+        transform: Any | None = None,
     ) -> None:
         """Initialize a torchvision dataset split and download it when necessary.
 
@@ -223,12 +245,12 @@ class LocalDataset(Dataset):
 
 
 def build_dataloaders(
-        batch_size: int = 64,
-        num_workers: int = 0,
-        max_train_samples: None | int = 1024,
-        max_test_samples: None | int = 256,
-        dataset_name: str = "CIFAR10",
-        custom: bool = False,
+    batch_size: int = 64,
+    num_workers: int = 0,
+    max_train_samples: None | int = 1024,
+    max_test_samples: None | int = 256,
+    dataset_name: str = "CIFAR10",
+    custom: bool = False,
 ) -> tuple[DataLoader[Any], DataLoader[Any]]:
     """Build training and test data loaders for a torchvision dataset.
 
@@ -243,19 +265,21 @@ def build_dataloaders(
     Returns:
         A training data loader and a test data loader.
     """
-    transform = transforms.Compose([
-        # transforms.ToTensor(),
-        transforms.Normalize(
-            mean=(0.485, 0.456, 0.406),
-            std=(0.229, 0.224, 0.225),
-        ),
-    ])
+    transform = transforms.Compose(
+        [
+            # transforms.ToTensor(),
+            transforms.Normalize(
+                mean=(0.485, 0.456, 0.406),
+                std=(0.229, 0.224, 0.225),
+            ),
+        ]
+    )
     data_root = Path(__file__).resolve().parents[2] / "data"
     data_root.mkdir(parents=True, exist_ok=True)
 
     dataset_class = ExampleDataset if custom else LocalDataset
     dataset_kwargs = {} if custom else {"dataset_name": dataset_name}
- 
+
     train_dataset = dataset_class(
         data_root=data_root,
         train=True,
@@ -276,12 +300,21 @@ def build_dataloaders(
         test_indices = torch.randperm(len(test_dataset))[:max_test_samples]
         test_dataset = Subset(test_dataset, test_indices.tolist())
 
-    print(f'Models training on dataset: {dataset_name}')
-    print(f'  Training device: {torch.device("cuda" if torch.cuda.is_available() else "cpu")}')
-    print(f'  Training/Test Samples: {len(train_dataset)}/{len(test_dataset)}')
-    print(f'  Batch Size: {batch_size}')
-    print(f'  Transformations: {transform}\n')
+    print(f"Models training on dataset: {dataset_name}")
+    print(
+        "  Training device: "
+        f"{torch.device('cuda' if torch.cuda.is_available() else 'cpu')}"
+    )
+    print(
+        f"  Training/Test Samples: {len(train_dataset)}/{len(test_dataset)}"
+    )
+    print(f"  Batch Size: {batch_size}")
+    print(f"  Transformations: {transform}\n")
 
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    train_loader = DataLoader(
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=num_workers
+    )
+    test_loader = DataLoader(
+        test_dataset, batch_size=batch_size, shuffle=False, num_workers=num_workers
+    )
     return train_loader, test_loader

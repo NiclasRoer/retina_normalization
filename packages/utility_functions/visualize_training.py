@@ -33,9 +33,7 @@ def plot_report(report: dict[str, Any], output_dir: Path) -> None:
 
     for model_name, model_result in model_histories.items():
         history = (
-            model_result["history"]
-            if isinstance(model_result, dict)
-            else model_result
+            model_result["history"] if isinstance(model_result, dict) else model_result
         )
         epochs = [entry["epoch"] for entry in history]
         train_loss = [entry["train_loss"] for entry in history]
@@ -85,11 +83,11 @@ def plot_report(report: dict[str, Any], output_dir: Path) -> None:
             confusion_axis.set_xlabel("Predicted label")
             confusion_axis.set_ylabel("True label")
             if labels:
-                confusion_axis.set_xticks(range(len(labels)), labels, rotation=45, ha="right")
+                confusion_axis.set_xticks(
+                    range(len(labels)), labels, rotation=45, ha="right"
+                )
                 confusion_axis.set_yticks(range(len(labels)), labels)
-            confusion_figure.savefig(
-                model_output_dir / "confusion_matrix.png", dpi=150
-            )
+            confusion_figure.savefig(model_output_dir / "confusion_matrix.png", dpi=150)
             plt.close(confusion_figure)
 
     loss_axis.set_title("Test loss by model")

@@ -19,10 +19,10 @@ class TestDataAnalyst:
         batch = torch.randn(8, 3, 32, 32)  # B, C, H, W
         labels = torch.randint(0, 10, (8,))
         dataset = list(zip([batch[i] for i in range(8)], labels))
-        
+
         loader = DataLoader(dataset, batch_size=8)
         channels, height, width = infer_input_spec(loader)
-        
+
         assert channels == 3
         assert height == 32
         assert width == 32
@@ -33,10 +33,10 @@ class TestDataAnalyst:
         batch = torch.randn(8, 32, 32)
         labels = torch.randint(0, 10, (8,))
         dataset = [(batch[i].unsqueeze(0), labels[i]) for i in range(8)]
-        
+
         loader = DataLoader(dataset, batch_size=8)
         channels, height, width = infer_input_spec(loader)
-        
+
         assert channels == 1
         assert height == 32
         assert width == 32
@@ -52,10 +52,10 @@ class TestDataAnalyst:
         batch = torch.randn(8, 3, 32, 32)
         labels = torch.tensor([0, 1, 2, 3, 4, 5, 6, 7])  # 0-7 = 8 classes
         dataset = [(batch[i], labels[i]) for i in range(8)]
-        
+
         loader = DataLoader(dataset, batch_size=8)
         num_classes = infer_num_classes(loader)
-        
+
         assert num_classes == 8
 
     def test_infer_num_classes_empty_loader(self) -> None:
@@ -72,14 +72,18 @@ class TestCustomDataset:
         """Test that __len__ raises NotImplementedError."""
         with tempfile.TemporaryDirectory() as tmpdir:
             dataset = CustomDataset(Path(tmpdir), train=True)
-            with pytest.raises(NotImplementedError, match="__len__ must be implemented"):
+            with pytest.raises(
+                NotImplementedError, match="__len__ must be implemented"
+            ):
                 len(dataset)
 
     def test_custom_dataset_getitem_not_implemented(self) -> None:
         """Test that __getitem__ raises NotImplementedError."""
         with tempfile.TemporaryDirectory() as tmpdir:
             dataset = CustomDataset(Path(tmpdir), train=True)
-            with pytest.raises(NotImplementedError, match="__getitem__ must be implemented"):
+            with pytest.raises(
+                NotImplementedError, match="__getitem__ must be implemented"
+            ):
                 dataset[0]
 
 
@@ -89,7 +93,9 @@ class TestExampleDataset:
     def test_example_dataset_file_not_found(self) -> None:
         """Test that ExampleDataset raises when files are missing."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            with pytest.raises(FileNotFoundError, match="Example dataset split was not found"):
+            with pytest.raises(
+                FileNotFoundError, match="Example dataset split was not found"
+            ):
                 ExampleDataset(Path(tmpdir), train=True)
 
     def test_example_dataset_with_valid_files(self) -> None:
@@ -98,7 +104,7 @@ class TestExampleDataset:
             tmpdir_path = Path(tmpdir)
             dataset_dir = tmpdir_path / "datasets" / "example_dataset"
             dataset_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Create dummy NPZ files with correct format [samples, height, width, 3]
             train_data = {
                 "images": np.random.randint(0, 256, (10, 32, 32, 3), dtype=np.uint8),
@@ -108,17 +114,17 @@ class TestExampleDataset:
                 "images": np.random.randint(0, 256, (5, 32, 32, 3), dtype=np.uint8),
                 "labels": np.random.randint(0, 10, 5, dtype=np.int64),
             }
-            
+
             np.savez(dataset_dir / "train.npz", **train_data)
             np.savez(dataset_dir / "test.npz", **test_data)
-            
+
             # Test train split
             train_dataset = ExampleDataset(tmpdir_path, train=True)
             assert len(train_dataset) == 10
             image, label = train_dataset[0]
             assert image.shape == (3, 32, 32)
             assert isinstance(label, torch.Tensor)
-            
+
             # Test test split
             test_dataset = ExampleDataset(tmpdir_path, train=False)
             assert len(test_dataset) == 5
@@ -135,14 +141,14 @@ class TestBuildDataloaders:
             max_train_samples=100,
             max_test_samples=50,
         )
-        
+
         assert isinstance(train_loader, DataLoader)
         assert isinstance(test_loader, DataLoader)
-        
+
         # Verify we can iterate
         images, labels = next(iter(train_loader))
         assert images.shape[0] <= 32  # batch_size or less
-        assert images.shape[1] == 3   # CIFAR10 has 3 channels
+        assert images.shape[1] == 3  # CIFAR10 has 3 channels
         assert images.shape[2] == 32  # 32x32 images
         assert images.shape[3] == 32
 
@@ -154,7 +160,7 @@ class TestBuildDataloaders:
             dataset_name="CIFAR10",
             max_train_samples=100,
         )
-        
+
         images, labels = next(iter(train_loader))
         assert images.shape[0] == batch_size
         assert labels.shape[0] == batch_size

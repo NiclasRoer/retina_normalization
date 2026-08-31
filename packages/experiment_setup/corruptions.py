@@ -16,7 +16,9 @@ def gaussian_noise(x: torch.Tensor, severity: float = 0.4) -> torch.Tensor:
 def gaussian_blur(x: torch.Tensor, severity: float = 0.4) -> torch.Tensor:
     """Blur with a Gaussian kernel whose sigma is severity."""
     kernel_size = int(2 * round(severity) + 1)
-    return TF.gaussian_blur(x, kernel_size=[kernel_size, kernel_size], sigma=[severity, severity])
+    return TF.gaussian_blur(
+        x, kernel_size=[kernel_size, kernel_size], sigma=[severity, severity]
+    )
 
 
 def brightness_shift(x: torch.Tensor, severity: float = 0.4) -> torch.Tensor:

@@ -34,8 +34,15 @@ def run_experiment(
     """
     torch.set_num_threads(1)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # train_loader, test_loader = build_dataloaders(batch_size=16, dataset_name=dataset_name, max_train_samples=None, max_test_samples=None)
-    train_loader, test_loader = build_dataloaders(batch_size=16, dataset_name=dataset_name)
+    # train_loader, test_loader = build_dataloaders(
+    #     batch_size=16,
+    #     dataset_name=dataset_name,
+    #     max_train_samples=None,
+    #     max_test_samples=None,
+    # )
+    train_loader, test_loader = build_dataloaders(
+        batch_size=16, dataset_name=dataset_name
+    )
 
     input_channels, _, _ = infer_input_spec(train_loader)
     num_classes = infer_num_classes(train_loader)
@@ -47,7 +54,13 @@ def run_experiment(
         for name, model in models.items()
     }
 
-    summary = fit_and_evaluate(models=models, train_loader=train_loader, test_loader=test_loader, device=device, epochs=epochs)
+    summary = fit_and_evaluate(
+        models=models,
+        train_loader=train_loader,
+        test_loader=test_loader,
+        device=device,
+        epochs=epochs,
+    )
 
     if output_dir is not None:
         experiment_dir = Path(output_dir) / (
@@ -62,6 +75,6 @@ def run_experiment(
     return summary
 
 
-if __name__=='__main__':
-    print('Running experiment...')
-    report = run_experiment(output_dir='./reports', epochs=20)
+if __name__ == "__main__":
+    print("Running experiment...")
+    report = run_experiment(output_dir="./reports", epochs=20)

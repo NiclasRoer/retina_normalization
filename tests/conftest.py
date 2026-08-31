@@ -22,6 +22,7 @@ def temp_data_dir(tmp_path):
 def sample_tensor():
     """Provide a sample tensor for corruption tests."""
     import torch
+
     return torch.randn(4, 3, 32, 32)
 
 
@@ -29,6 +30,7 @@ def sample_tensor():
 def sample_batch():
     """Provide a sample batch of images and labels."""
     import torch
+
     images = torch.randn(8, 3, 224, 224)
     labels = torch.randint(0, 10, (8,))
     return images, labels

@@ -33,10 +33,10 @@ class TestAdaptModelToData:
         """Test adapting model from 3 channels to 1."""
         model = models.resnet18(weights=None)
         adapted = adapt_model_to_data(model, input_channels=1, num_classes=10)
-        
+
         # Model should have adapted conv1 to accept 1 channel
         assert adapted.conv1.in_channels == 1
-        
+
         # Should be able to forward single-channel input
         x = torch.randn(1, 1, 224, 224)
         output = adapted(x)
@@ -46,10 +46,10 @@ class TestAdaptModelToData:
         """Test adapting model to different number of output classes."""
         model = models.resnet18(weights=None)
         adapted = adapt_model_to_data(model, input_channels=3, num_classes=100)
-        
+
         # Model should have adapted fc layer for 100 classes
         assert adapted.fc.out_features == 100
-        
+
         # Should output correct shape
         x = torch.randn(1, 3, 224, 224)
         output = adapted(x)
@@ -60,9 +60,9 @@ class TestAdaptModelToData:
         model = models.resnet18(weights=None)
         # Set a specific weight value to check
         original_conv_weight = model.conv1.weight.clone()
-        
+
         adapted = adapt_model_to_data(model, input_channels=3, num_classes=10)
-        
+
         # If input channels match, conv1 weights should be preserved
         torch.testing.assert_close(
             adapted.conv1.weight[:, :, :, :],
@@ -75,7 +75,7 @@ class TestAdaptModelToData:
         """Test adapting MobileNet architecture."""
         model = models.mobilenet_v2(weights=None)
         adapted = adapt_model_to_data(model, input_channels=3, num_classes=10)
-        
+
         # Verify it can process input and output correct shape
         x = torch.randn(2, 3, 224, 224)
         output = adapted(x)
@@ -90,7 +90,7 @@ class TestProvideModel:
         try:
             model = provide_model("resnet18", pretrained=False)
             assert isinstance(model, nn.Module)
-            
+
             # Should be able to forward
             x = torch.randn(1, 3, 224, 224)
             output = model(x)
@@ -102,7 +102,7 @@ class TestProvideModel:
         """Test loading MobileNetV3Small."""
         model = provide_model("mobilenet_v3_small", pretrained=False)
         assert isinstance(model, nn.Module)
-        
+
         # Should be able to forward
         x = torch.randn(1, 3, 224, 224)
         output = model(x)
@@ -181,7 +181,7 @@ class TestModelForwardPass:
         """Test ResNet18 forward pass with various batch sizes."""
         model = provide_model("resnet18", pretrained=False)
         model.eval()
-        
+
         for batch_size in [1, 2, 8]:
             x = torch.randn(batch_size, 3, 224, 224)
             with torch.no_grad():
@@ -193,7 +193,7 @@ class TestModelForwardPass:
         model = provide_model("resnet18", pretrained=False)
         adapted = adapt_model_to_data(model, input_channels=3, num_classes=10)
         adapted.eval()
-        
+
         x = torch.randn(4, 3, 224, 224)
         with torch.no_grad():
             output = adapted(x)
@@ -203,12 +203,12 @@ class TestModelForwardPass:
         """Test that gradients can flow through adapted models."""
         model = provide_model("resnet18", pretrained=False)
         adapted = adapt_model_to_data(model, input_channels=3, num_classes=10)
-        
+
         x = torch.randn(2, 3, 224, 224, requires_grad=True)
         output = adapted(x)
         loss = output.sum()
         loss.backward()
-        
+
         # Gradients should exist
         assert x.grad is not None
         assert x.grad.shape == x.shape

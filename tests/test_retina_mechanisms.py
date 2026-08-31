@@ -30,7 +30,7 @@ class TestRetinaPreprocessingBlock:
         """Test that forward pass works (once implemented)."""
         block = RetinaPreprocessingBlock(channels=3, temportal_alpha=0.2)
         x = torch.randn(2, 3, 32, 32)
-        
+
         try:
             output = block(x)
             # If forward is implemented, output should have same shape
@@ -42,7 +42,7 @@ class TestRetinaPreprocessingBlock:
     def test_retina_block_preserves_batch_size(self) -> None:
         """Test that preprocessing preserves batch size (once implemented)."""
         block = RetinaPreprocessingBlock(channels=3, temportal_alpha=0.2)
-        
+
         for batch_size in [1, 2, 4, 8]:
             x = torch.randn(batch_size, 3, 32, 32)
             try:
@@ -69,10 +69,10 @@ class TestRetinaPreprocessingBlock:
     def test_retina_block_train_eval_modes(self) -> None:
         """Test that RetinaPreprocessingBlock responds to train/eval modes."""
         block = RetinaPreprocessingBlock(channels=3)
-        
+
         block.train()
         assert block.training
-        
+
         block.eval()
         assert not block.training
 
@@ -88,7 +88,7 @@ class TestRetinaPreprocessingBlock:
         """Test RetinaPreprocessingBlock with single-channel input."""
         block = RetinaPreprocessingBlock(channels=1)
         x = torch.randn(2, 1, 32, 32)
-        
+
         try:
             output = block(x)
             assert output.shape == x.shape
@@ -99,14 +99,14 @@ class TestRetinaPreprocessingBlock:
         """Test that eval mode produces deterministic output."""
         block = RetinaPreprocessingBlock(channels=3)
         block.eval()
-        
+
         x = torch.randn(1, 3, 32, 32)
-        
+
         try:
             with torch.no_grad():
                 output1 = block(x)
                 output2 = block(x)
-            
+
             # In eval mode, same input should produce same output
             torch.testing.assert_close(output1, output2)
         except NotImplementedError:

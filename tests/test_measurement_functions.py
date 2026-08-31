@@ -34,7 +34,7 @@ class TestMeasureGflop:
         """Test FLOP measurement on a simple model."""
         model = SimpleModel()
         measure_gflop(model)
-        
+
         captured = capsys.readouterr()
         # Should print FLOP count
         assert "GFLOPs" in captured.out or "FLOP" in captured.out
@@ -43,7 +43,7 @@ class TestMeasureGflop:
         """Test FLOP measurement on ResNet."""
         model = models.resnet18(weights=None)
         measure_gflop(model)
-        
+
         captured = capsys.readouterr()
         assert "GFLOPs" in captured.out or "FLOP" in captured.out
 
@@ -51,11 +51,11 @@ class TestMeasureGflop:
         """Test that model is set to eval mode during measurement."""
         model = SimpleModel()
         model.train()  # Set to training mode first
-        
+
         # Measure should set it to eval internally
         measure_gflop(model)
-        # After measurement, model should still be in eval (or it's acceptable either way)
-        # This test mainly ensures no exceptions are raised
+        # After measurement, the model should still be in eval.
+        # This test mainly ensures no exceptions are raised.
 
     def test_measure_gflop_different_architectures(self, capsys) -> None:
         """Test FLOP measurement across different architectures."""
@@ -63,7 +63,7 @@ class TestMeasureGflop:
             ("ResNet18", models.resnet18(weights=None)),
             ("MobileNetV2", models.mobilenet_v2(weights=None)),
         ]
-        
+
         for name, model in models_to_test:
             measure_gflop(model)
             captured = capsys.readouterr()
@@ -73,7 +73,7 @@ class TestMeasureGflop:
         """Test that FLOP measurements are reasonable values."""
         model = SimpleModel()
         measure_gflop(model)
-        
+
         captured = capsys.readouterr()
         # FLOP count should be a positive number
         # Extract the number from output (simple heuristic)
@@ -84,12 +84,12 @@ class TestMeasureGflop:
     def test_measure_gflop_does_not_modify_model(self) -> None:
         """Test that measuring FLOPs doesn't modify model state."""
         model = SimpleModel()
-        
+
         # Store original weight
         original_weight = model.fc.weight.clone()
-        
+
         measure_gflop(model)
-        
+
         # Weight should be unchanged
         torch.testing.assert_close(model.fc.weight, original_weight)
 
@@ -98,7 +98,7 @@ class TestMeasureGflop:
         # The function hardcodes batch size 1 in torch.randn(1, 3, 224, 224)
         model = SimpleModel()
         measure_gflop(model)
-        
+
         captured = capsys.readouterr()
         # Should complete without errors
         assert "GFLOPs" in captured.out or "FLOP" in captured.out

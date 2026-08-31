@@ -23,13 +23,19 @@ def parse_args() -> argparse.Namespace:
         "--model",
         action="append",
         dest="models",
-        help="Specify the model(s) to benchmark. Can be specified multiple times for multiple models.",
+        help=(
+            "Specify the model(s) to benchmark. Can be specified multiple "
+            "times for multiple models."
+        ),
     )
     parser.add_argument(
         "--family",
         action="append",
         dest="families",
-        help="Architecture family to inspect/evaluate. Can be specified multiple times for multiple families.",
+        help=(
+            "Architecture family to inspect/evaluate. Can be specified "
+            "multiple times for multiple families."
+        ),
     )
     parser.add_argument(
         "--dataset",

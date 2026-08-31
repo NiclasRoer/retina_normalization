@@ -19,7 +19,7 @@ def main() -> None:
 
     run_experiment(
         models=loaded_models,
-        output_dir='./reports',
+        output_dir="./reports",
         epochs=10,
         dataset_name=args.dataset,
     )

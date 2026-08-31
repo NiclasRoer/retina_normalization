@@ -102,7 +102,12 @@ def discover_model_names(family: str) -> list[str]:
     return sorted(set(names))
 
 
-def provide_model(model_name: str, weights=None, pretrained: bool = True, get_metadata: bool = False):
+def provide_model(
+    model_name: str,
+    weights=None,
+    pretrained: bool = True,
+    get_metadata: bool = False,
+):
     """Build and return a model for the requested name.
 
     Args:
@@ -246,7 +251,9 @@ def reshape_fc_layer(model, num_classes: int = 10, freeze_backbone: bool = True)
             model.classifier = _build_classifier_head(in_features, num_classes)
 
     else:
-        raise ValueError("Model does not expose a standard final layer like 'fc' or 'classifier'.")
+        raise ValueError(
+            "Model does not expose a standard final layer like 'fc' or 'classifier'."
+        )
 
     if freeze_backbone:
         for param in model.parameters():
@@ -281,7 +288,8 @@ def get_model_shape(model, layer_breakdown: bool = False) -> None:
     """
     print("Model Summary:")
     print(f"  Total parameters: {sum(p.numel() for p in model.parameters())}")
-    print(f"  Total trainable parameters: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
+    trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+    print(f"  Total trainable parameters: {trainable}")
 
     if layer_breakdown:
         for name, layer in model.named_modules():
@@ -311,8 +319,12 @@ def get_model_metadata(model_weights) -> None:
     imagenet_metrics = metrics.get("ImageNet-1K", {})
     acc1, acc5 = imagenet_metrics["acc@1"], imagenet_metrics["acc@5"]
     flops = meta.get("_ops", float("nan"))
-    print(f"Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}")
-    
+    print(
+        "Metadata:\n"
+        f"    GFLOPS: {flops}\n"
+        f"    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}"
+    )
+
 
 def load_models(
     models: list[str] | None = None,
@@ -343,9 +355,7 @@ def load_models(
         requested_models = ["mobilenet_v3_small"]
         print("No models provided; using mobilenet_v3_small as the baseline.")
     else:
-        print(
-            f"Models to benchmark: {requested_models + requested_custom_models}"
-        )
+        print(f"Models to benchmark: {requested_models + requested_custom_models}")
 
     loaded_models = {}
     for model_name in requested_models:
@@ -363,8 +373,12 @@ def load_models(
     )
     for model_name in requested_custom_models:
         if model_name == "ExampleModel":
-            weights_path = example_weights_path if example_weights_path.exists() else None
-            loaded_models[model_name] = ExampleModel(weights_path=weights_path).to(device)
+            weights_path = (
+                example_weights_path if example_weights_path.exists() else None
+            )
+            loaded_models[model_name] = ExampleModel(
+                weights_path=weights_path
+            ).to(device)
         else:
             loaded_models[model_name] = CustomModel(model_name).to(device)
 

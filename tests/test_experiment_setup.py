@@ -37,7 +37,7 @@ class TestGaussianNoise:
         x = torch.zeros(4, 3, 32, 32)
         y_low = gaussian_noise(x, severity=0.1)
         y_high = gaussian_noise(x, severity=1.0)
-        
+
         # High severity should produce larger values (on average)
         assert y_high.abs().mean() > y_low.abs().mean()
 
@@ -56,7 +56,7 @@ class TestGaussianBlur:
         # Create a sharp image (high variance)
         x = torch.randn(1, 3, 32, 32)
         y = gaussian_blur(x, severity=1.0)
-        
+
         # Blurred image should have lower variance (less high-frequency content)
         # Note: This is a heuristic test; actual behavior depends on implementation
         assert y.shape == x.shape
@@ -83,7 +83,7 @@ class TestBrightnessShift:
         x = torch.ones(4, 3, 32, 32)
         severity = 0.5
         y = brightness_shift(x, severity=severity)
-        
+
         # All values should be increased by severity
         torch.testing.assert_close(y, x + severity)
 
@@ -114,11 +114,11 @@ class TestContrastShift:
         # Create an image with clear mean and variation
         x = torch.randn(4, 3, 32, 32)
         y = contrast_shift(x, severity=0.5)
-        
+
         # Reduced contrast means variance around mean should be smaller
         x_mean_centered = x - x.mean(dim=(2, 3), keepdim=True)
         y_mean_centered = y - y.mean(dim=(2, 3), keepdim=True)
-        
+
         # The std should be approximately 0.5 times the original
         # (allowing for some numerical precision)
         assert y_mean_centered.std() < x_mean_centered.std()
@@ -127,10 +127,10 @@ class TestContrastShift:
         """Test that severity > 1 increases contrast."""
         x = torch.randn(4, 3, 32, 32)
         y = contrast_shift(x, severity=2.0)
-        
+
         x_mean_centered = x - x.mean(dim=(2, 3), keepdim=True)
         y_mean_centered = y - y.mean(dim=(2, 3), keepdim=True)
-        
+
         # Increased contrast means variance should be larger
         assert y_mean_centered.std() > x_mean_centered.std()
 
