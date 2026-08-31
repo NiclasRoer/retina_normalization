@@ -35,7 +35,8 @@ def run_experiment(
     """
     torch.set_num_threads(1)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    train_loader, test_loader = build_dataloaders(batch_size=16, dataset_name=dataset_name, max_train_samples=None, max_test_samples=None)
+    # train_loader, test_loader = build_dataloaders(batch_size=16, dataset_name=dataset_name, max_train_samples=None, max_test_samples=None)
+    train_loader, test_loader = build_dataloaders(batch_size=16, dataset_name=dataset_name)
 
     input_channels, _, _ = infer_input_spec(train_loader)
     num_classes = infer_num_classes(train_loader)
