@@ -9,7 +9,6 @@ from typing import Any
 
 import torch
 import torch.nn as nn
-
 from dataset_functions.data_analyst import infer_input_spec, infer_num_classes
 from dataset_functions.datasets import build_dataloaders
 from model_functions.train_models import adapt_model_to_data, fit_and_evaluate

@@ -1,21 +1,18 @@
 """Tests for model_functions package."""
 
 import urllib.error
-from typing import Any
 
 import pytest
 import torch
 import torch.nn as nn
-from torchvision import models
-
 from model_functions.model_loader import (
     CustomModel,
     discover_model_names,
-    list_all_available_models,
     load_models,
     provide_model,
 )
 from model_functions.train_models import adapt_model_to_data
+from torchvision import models
 
 
 class TestCustomModel:

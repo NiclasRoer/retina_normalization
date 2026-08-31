@@ -2,15 +2,13 @@
 
 import tempfile
 from pathlib import Path
-from typing import Any
 
 import numpy as np
 import pytest
 import torch
-from torch.utils.data import DataLoader
-
 from dataset_functions.data_analyst import infer_input_spec, infer_num_classes
 from dataset_functions.datasets import CustomDataset, ExampleDataset, build_dataloaders
+from torch.utils.data import DataLoader
 
 
 class TestDataAnalyst:

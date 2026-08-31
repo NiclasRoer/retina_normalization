@@ -5,16 +5,11 @@ and validating realistic scenarios. They may be slower than unit tests.
 """
 
 import json
-import tempfile
 from pathlib import Path
-from typing import Any
 
-import numpy as np
 import pytest
 import torch
 import torch.nn as nn
-from torch.utils.data import DataLoader, TensorDataset
-
 from dataset_functions.data_analyst import infer_input_spec, infer_num_classes
 from dataset_functions.datasets import build_dataloaders
 from experiment_setup.corruptions import CORRUPTIONS, gaussian_noise
@@ -26,6 +21,7 @@ from model_functions.train_models import (
     fit_and_evaluate,
     train_one_epoch,
 )
+from torch.utils.data import DataLoader, TensorDataset
 
 
 class TestModelTrainingWorkflow:
@@ -287,6 +283,7 @@ class TestCorruptionWorkflow:
 
         # Verify we have results for all corruptions
         assert len(corruption_accs) == len(CORRUPTIONS)
+        assert isinstance(clean_acc, float) 
         # Verify accuracies are between 0 and 1
         assert all(0 <= acc <= 1 for acc in corruption_accs.values())
 

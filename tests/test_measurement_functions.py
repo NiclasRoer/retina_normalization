@@ -1,11 +1,9 @@
 """Tests for measurement_functions package."""
 
-import pytest
 import torch
 import torch.nn as nn
-from torchvision import models
-
 from measurement_functions.gflop import measure_gflop
+from torchvision import models
 
 
 class SimpleModel(nn.Module):

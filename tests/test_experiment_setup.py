@@ -1,8 +1,6 @@
 """Tests for experiment_setup package."""
 
-import pytest
 import torch
-
 from experiment_setup.corruptions import (
     CORRUPTIONS,
     brightness_shift,

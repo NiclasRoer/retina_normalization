@@ -1,10 +1,7 @@
 """Tests for utility_functions package."""
 
 import sys
-from pathlib import Path
 from unittest.mock import patch
-
-import pytest
 
 from utility_functions.parser import parse_args
 
