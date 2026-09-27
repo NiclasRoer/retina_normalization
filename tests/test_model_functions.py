@@ -10,6 +10,7 @@ from model_functions.model_loader import (
     CustomModel,
     discover_model_names,
     load_models,
+    provide_experimental_model,
     provide_model,
 )
 from model_functions.train_models import adapt_model_to_data
@@ -161,10 +162,11 @@ class TestLoadModels:
         assert isinstance(loaded["mobileone_s0"], nn.Module)
         assert created_models == [("mobileone_s0", True)]
 
-    def test_load_models_falls_back_to_random_timm_weights(self, monkeypatch) -> None:
+    def test_provide_experimental_model_falls_back_to_random_weights(
+        self, monkeypatch
+    ) -> None:
         """Build a timm model without weights if pretrained download fails."""
         created_models = []
-        monkeypatch.setattr(model_loader.timm, "list_models", lambda: ["resnet10t"])
 
         def create_model(model_name: str, pretrained: bool) -> nn.Module:
             created_models.append((model_name, pretrained))
@@ -174,9 +176,9 @@ class TestLoadModels:
 
         monkeypatch.setattr(model_loader.timm, "create_model", create_model)
 
-        loaded = load_models(models=["resnet10t"])
+        model = provide_experimental_model("resnet10t")
 
-        assert isinstance(loaded["resnet10t"], nn.Module)
+        assert isinstance(model, nn.Module)
         assert created_models == [("resnet10t", True), ("resnet10t", False)]
 
     def test_load_models_by_name(self) -> None:

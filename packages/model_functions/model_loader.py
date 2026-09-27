@@ -69,20 +69,31 @@ class ExampleModel(CustomModel):
         return self.classifier(features)
 
 
-def experimental_models() -> None:
+def provide_experimental_model(model_name: str) -> None:
     """Create and inspect a sample MobileOne model.
 
     Args:
-        None: This function does not accept parameters.
+        model_name: The timm model name to load.
 
     Returns:
-        None: The function prints model summary information.
+        nn.Module: The constructed PyTorch model.
 
     Raises:
-        None: This function does not raise custom exceptions.
+        Exception: If pretraining weights cannot be loaded.
     """
-    model = timm.create_model("mobileone_s0")
-    get_model_shape(model)
+    print(f"Modelname: {model_name}")
+    try:
+        model = timm.create_model(model_name, pretrained=True)
+        print("Model build with found weights...")
+    except Exception as error:
+        print(
+            f"Could not load pretrained weights for timm model "
+            f"'{model_name}': {error}\n"
+            "Falling back to random initialization."
+        )
+        model = timm.create_model(model_name, pretrained=False)
+    print("Model sucessfully build.\n")
+    return model
 
 
 def discover_model_names(family: str) -> list[str]:
@@ -363,16 +374,9 @@ def load_models(
         if hasattr(torchvision.models, model_name):
             loaded_models[model_name] = provide_model(model_name).to(device)
         elif model_name in timm.list_models():
-            try:
-                model = timm.create_model(model_name, pretrained=True)
-            except Exception as error:
-                print(
-                    f"Could not load pretrained weights for timm model "
-                    f"'{model_name}': {error}\n"
-                    "Falling back to random initialization."
-                )
-                model = timm.create_model(model_name, pretrained=False)
-            loaded_models[model_name] = model.to(device)
+            loaded_models[model_name] = provide_experimental_model(model_name).to(
+                device
+            )
         else:
             print(f"Unknown torchvision model: '{model_name}'")
 
