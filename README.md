@@ -130,6 +130,34 @@ python apps/main.py --family resnet
 python apps/main.py --family mobilenetv3 --family efficientnet
 ```
 
+Before loading models, the project checks them against the CIFAR-10 training
+workflow: construction, adaptation to three-channel/10-class input, a forward
+pass on 32×32 images, and backpropagation. Usable torchvision models and
+registered custom models are recorded in the root-level
+`verified_models.json`; unverified models are skipped. If the file is missing,
+the check runs once automatically and writes it. You can regenerate it manually
+after changing the model code:
+
+```bash
+python apps/update_verified_models.py
+```
+
+The verifier initializes models without pretrained weights and does not need
+network access. To additionally check selected timm models, pass each name:
+
+```bash
+python apps/update_verified_models.py --timm-model resnet10t
+```
+
+Only timm models present in the verified JSON can be selected by the benchmark.
+At runtime, the loader still attempts pretrained weights for verified models;
+if a timm weight download fails, it falls back to random initialization.
+Currently, `ExampleModel` is the repository's registered concrete custom
+architecture. Before adding another custom architecture, give it a real
+constructor and forward pass, include it in the verifier's custom candidates,
+and add its loading branch to `load_models()`; abstract `CustomModel` names are
+not loadable benchmark models.
+
 When no model is specified, the benchmark uses `mobilenet_v3_small` as its
 baseline. New results are written to a timestamped directory such as
 `reports/experiment_MMDD_HHMM/`. Each model's metrics and confusion-matrix

@@ -69,17 +69,17 @@ class ExampleModel(CustomModel):
         return self.classifier(features)
 
 
-def provide_experimental_model(model_name: str) -> None:
-    """Create and inspect a sample MobileOne model.
+def provide_experimental_model(model_name: str) -> nn.Module:
+    """Create a timm model, falling back to random initialization if needed.
 
     Args:
-        model_name: The timm model name to load.
+        model_name: The verified timm model name to load.
 
     Returns:
-        nn.Module: The constructed PyTorch model.
+        nn.Module: The constructed timm model.
 
     Raises:
-        Exception: If pretraining weights cannot be loaded.
+        Exception: If the model cannot be constructed with or without weights.
     """
     print(f"Modelname: {model_name}")
     try:
@@ -353,6 +353,9 @@ def load_models(
     Returns:
         A dictionary mapping successfully loaded model names to model instances.
     """
+    from model_functions.model_verification import ensure_verified_models
+
+    verified_models = ensure_verified_models()
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     requested_models = list(models or [])
@@ -371,14 +374,14 @@ def load_models(
 
     loaded_models = {}
     for model_name in requested_models:
-        if hasattr(torchvision.models, model_name):
+        if model_name in verified_models["torchvision"]:
             loaded_models[model_name] = provide_model(model_name).to(device)
-        elif model_name in timm.list_models():
+        elif model_name in verified_models["timm"]:
             loaded_models[model_name] = provide_experimental_model(model_name).to(
                 device
             )
         else:
-            print(f"Unknown torchvision model: '{model_name}'")
+            print(f"Model '{model_name}' is not in the verified model list; skipping.")
 
     example_weights_path = (
         Path(__file__).resolve().parents[2]
@@ -388,14 +391,18 @@ def load_models(
         / "weights.pth"
     )
     for model_name in requested_custom_models:
-        if model_name == "ExampleModel":
+        if model_name not in verified_models["custom"]:
+            print(f"Custom model '{model_name}' is not verified; skipping.")
+        elif model_name == "ExampleModel":
             weights_path = (
                 example_weights_path if example_weights_path.exists() else None
             )
-            loaded_models[model_name] = loaded_models[model_name] = ExampleModel(
-                weights_path=weights_path
-            ).to(device)
+            loaded_models[model_name] = ExampleModel(weights_path=weights_path).to(
+                device
+            )
         else:
-            loaded_models[model_name] = CustomModel(model_name).to(device)
+            print(
+                f"No registered constructor for verified custom model '{model_name}'."
+            )
 
     return loaded_models

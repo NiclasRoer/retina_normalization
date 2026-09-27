@@ -3,6 +3,7 @@
 import urllib.error
 
 import model_functions.model_loader as model_loader
+import model_functions.model_verification as model_verification
 import pytest
 import torch
 import torch.nn as nn
@@ -147,6 +148,11 @@ class TestLoadModels:
     def test_load_models_falls_back_to_timm(self, monkeypatch) -> None:
         """Load a registered timm model when torchvision does not provide it."""
         created_models = []
+        monkeypatch.setattr(
+            model_verification,
+            "ensure_verified_models",
+            lambda: {"torchvision": [], "timm": ["mobileone_s0"], "custom": []},
+        )
         monkeypatch.setattr(model_loader.timm, "list_models", lambda: ["mobileone_s0"])
 
         def create_model(model_name: str, pretrained: bool) -> nn.Module:
@@ -161,6 +167,18 @@ class TestLoadModels:
         assert "not_a_model" not in loaded
         assert isinstance(loaded["mobileone_s0"], nn.Module)
         assert created_models == [("mobileone_s0", True)]
+
+    def test_load_models_skips_unverified_custom_model(self, monkeypatch) -> None:
+        """Do not instantiate arbitrary CustomModel placeholders."""
+        monkeypatch.setattr(
+            model_verification,
+            "ensure_verified_models",
+            lambda: {"torchvision": [], "timm": [], "custom": []},
+        )
+
+        loaded = load_models(custom_models=["not_verified"])
+
+        assert loaded == {}
 
     def test_provide_experimental_model_falls_back_to_random_weights(
         self, monkeypatch

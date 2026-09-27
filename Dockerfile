@@ -7,6 +7,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 COPY pyproject.toml README.md ./
+COPY verified_models.json ./
 COPY packages ./packages
 COPY apps ./apps
 
