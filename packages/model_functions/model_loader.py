@@ -199,9 +199,11 @@ def list_all_available_models() -> None:
         for name in dir(torchvision.models)
         if not name.startswith("_") and "Weights" not in name and "weights" not in name
     ]
+    timm_names = timm.list_models()
     print(f"{len(all_names)} models available in torchvision.models")
     print(f"All available models in torchvision.models: {all_names}")
-
+    print(f"{len(timm_names)} models available in timm")
+    print(f"All available models in timm: {timm_names}")
 
 def _build_classifier_head(in_features: int, num_classes: int) -> nn.Module:
     """Build a small classifier head for transfer learning.
@@ -331,7 +333,7 @@ def load_models(
     families: list[str] | None = None,
     custom_models: list[str] | None = None,
 ) -> dict[str, nn.Module]:
-    """Load requested torchvision and custom models on the available device.
+    """Load requested torchvision, timm, and custom models on the available device.
 
     Args:
         models: Optional torchvision model names to load.
@@ -361,6 +363,17 @@ def load_models(
     for model_name in requested_models:
         if hasattr(torchvision.models, model_name):
             loaded_models[model_name] = provide_model(model_name).to(device)
+        elif model_name in timm.list_models():
+            try:
+                model = timm.create_model(model_name, pretrained=True)
+            except Exception as error:
+                print(
+                    f"Could not load pretrained weights for timm model "
+                    f"'{model_name}': {error}\n"
+                    "Falling back to random initialization."
+                )
+                model = timm.create_model(model_name, pretrained=False)
+            loaded_models[model_name] = model.to(device)
         else:
             print(f"Unknown torchvision model: '{model_name}'")
 
