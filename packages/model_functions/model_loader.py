@@ -205,6 +205,7 @@ def list_all_available_models() -> None:
     print(f"{len(timm_names)} models available in timm")
     print(f"All available models in timm: {timm_names}")
 
+
 def _build_classifier_head(in_features: int, num_classes: int) -> nn.Module:
     """Build a small classifier head for transfer learning.
 
@@ -322,9 +323,7 @@ def get_model_metadata(model_weights) -> None:
     acc1, acc5 = imagenet_metrics["acc@1"], imagenet_metrics["acc@5"]
     flops = meta.get("_ops", float("nan"))
     print(
-        "Metadata:\n"
-        f"    GFLOPS: {flops}\n"
-        f"    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}"
+        f"Metadata:\n    GFLOPS: {flops}\n    ImageNet-1K Acc@1: {acc1},Acc@5: {acc5}"
     )
 
 
@@ -389,7 +388,7 @@ def load_models(
             weights_path = (
                 example_weights_path if example_weights_path.exists() else None
             )
-            loaded_models[model_name] = ExampleModel(
+            loaded_models[model_name] = loaded_models[model_name] = ExampleModel(
                 weights_path=weights_path
             ).to(device)
         else:

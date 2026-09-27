@@ -305,9 +305,7 @@ def build_dataloaders(
         "  Training device: "
         f"{torch.device('cuda' if torch.cuda.is_available() else 'cpu')}"
     )
-    print(
-        f"  Training/Test Samples: {len(train_dataset)}/{len(test_dataset)}"
-    )
+    print(f"  Training/Test Samples: {len(train_dataset)}/{len(test_dataset)}")
     print(f"  Batch Size: {batch_size}")
     print(f"  Transformations: {transform}\n")
 
